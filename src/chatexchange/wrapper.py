@@ -41,6 +41,8 @@ class SEChatWrapper(object):
         self.thread.setDaemon(True)
 
     def login(self, username, password):
+        __tracebackhide__ = True
+
         assert not self.logged_in
         self.logger.info("Logging in.")
 
