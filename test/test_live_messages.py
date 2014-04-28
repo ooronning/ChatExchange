@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 TEST_ROOMS = [
     ('SE', '11540'), # Charcoal HQ
+    ('MSE', '651'), # Sandbox
     ('SO', '1'), # Sandbox
 ]
 
