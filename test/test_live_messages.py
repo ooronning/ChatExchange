@@ -26,6 +26,7 @@ else:
 
 TEST_ROOMS = [
     ('SE', '11540'), # Charcoal HQ
+    ('SO', '1'), # Sandbox
 ]
 
 
