@@ -22,6 +22,8 @@ class SEChatBrowser(object):
         """
         Logs the browser into Stack Exchange's OpenID provider.
         """
+        __tracebackhide__ = True
+
         self.userlogin = user
         self.userpass = password
 
@@ -103,6 +105,8 @@ class SEChatBrowser(object):
         POSTs the specified data to post_url, after retrieving an 'fkey'
         value from an element named 'fkey' at fkey_url.
         """
+        __tracebackhide__ = True
+
         fkey_soup = self.getSoup(fkey_url)
         fkey_input = fkey_soup.find('input', {'name': 'fkey'})
         if fkey_input is None:
