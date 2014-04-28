@@ -2,7 +2,7 @@ This is Jeremy's test branch of ChatExchange.
 
 The official repository can be found at <https://github.com/Manishearth/ChatExchange>.
 
-[![Travis CI build status for master](https://travis-ci.org/jeremybanks/ChatExchange.svg?branch=jeremy)](https://travis-ci.org/jeremybanks/ChatExchange/branches)
+[![Travis CI build status for master](https://travis-ci.org/jeremybanks/ChatExchange.svg?branch=test)](https://travis-ci.org/jeremybanks/ChatExchange/branches)
 
 ---
 
