@@ -1,4 +1,5 @@
 # encoding: utf-8
+import Cookie
 import json
 
 import httmock
@@ -152,7 +153,80 @@ def favorite_with_test_fkey(url, request):
 </html>'''
 
 
-@httmock.urlmatch(netloc=r'.*')
+
+
+@httmock.urlmatch(netloc=r'openid\.stackexchange\.com')
+def redirect_any_to_se_openid_authentication_prompt(url, request):
+    # XXX(jbanks): I couldn't figure out how to get this to set a `usr`
+    # XXX(jbanks): cookie, which would be useful for testing.
+    return httmock.response(302, request=request, headers={
+        'Location': 'https://openid.stackexchange.com/account/prompt'
+    })
+
+
+
+
+@httmock.urlmatch(netloc=r'openid\.stackexchange\.com', path=r'^/account/prompt')
+def se_openid_authentication_prompt(url, request):
+    return '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>meta.stackexchange.com wants you to log in</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+    <script type="text/javascript" src="/Content/js/master.js?v=G%2bY6cUwtMkSoLdT60eqelDQnxJU%3d"></script>
+    <link rel="stylesheet" type="text/css" href="/Content/css/all.css?v=G%2bY6cUwtMkSoLdT60eqelDQnxJU%3d" />
+
+            <script type="text/javascript">common.bustFrames();</script>
+
+
+            <link rel="openid.server" href="https://openid.stackexchange.com/openid/provider">
+            <link rel="openid2.provider" href="https://openid.stackexchange.com/openid/provider">
+
+    </head>
+<body>
+        <div id="topbar">
+            <div id="menubar">
+                <div class="logocontainer">
+                    <a id="logo" href="/"></a>
+                </div>
+                <div id="menu">
+
+                                <a href="/user" >Profile</a>
+                                <a href="/account/password-reset" >Change Password</a>
+                                <a href="/account/logout" >Logout</a>
+
+                </div>
+            </div>
+        </div>
+        <div id="content">
+            <div id="mainbar">
+                <h2 class="page-header">meta.stackexchange.com wants you to log in</h2>
+
+
+
+<p>Do you wish to share your information with meta.stackexchange.com?</p>
+
+<form method="post" action="/account/prompt/submit">
+<input type="hidden" name="session" value="7cd6e1f7-c3ac-4681-8397-96bbd54636d5" />
+<input type="hidden" name="fkey" value="b63b9fc0-4600-4b4d-82f9-63457449f72d" />
+<input type="submit" class="orange" value="Confirm" />
+</form>            </div>
+
+            <div id="footer">
+                A part of the <a href="http://stackexchange.com/">Stack Exchange</a> network.  <span style="color:maroon" title="Because we care">&lt;3</span>
+            </div>
+
+        </div>
+</body>
+</html>'''
+
+
+@httmock.all_requests
 def fail_everything_else(url, request):
-    raise Exception("unexpected request; no mock available", request)
+    raise NoMockMatchedError(
+        "unexpected request; no mock available", request.__dict__)
+
+
+class NoMockMatchedError(Exception):
+    pass
 
