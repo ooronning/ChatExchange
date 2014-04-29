@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 TEST_ROOMS = [
     ('SE', '1701'), # Firearms (abandoned, immortal)
+    ('SE', '14219'), # Charcoal Sandbox
 ]
 
 
