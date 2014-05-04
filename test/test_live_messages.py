@@ -55,7 +55,7 @@ if live_testing.enabled:
             live_testing.username,
             live_testing.password)
 
-        timeout_duration = 10
+        timeout_duration = 60
 
         pending_events = Queue.Queue()
 
@@ -127,6 +127,8 @@ if live_testing.enabled:
                 and test_message_nonce in event.content
             )
 
+        logger.debug("Observed test edit")
+
         test_reply_nonce = uuid.uuid4().hex
         test_reply_content = TEST_MESSAGE_FORMAT.format(test_reply_nonce)
 
@@ -142,6 +144,35 @@ if live_testing.enabled:
                 and test_reply_nonce in event.content
             )
 
+        logger.debug("Observed test reply")
+
         assert test_reply.parent_message_id == test_message.message_id
+
+        test_edit_nonce = uuid.uuid4().hex
+        test_edit_content = TEST_MESSAGE_FORMAT.format(test_edit_nonce)
+
+        logger.debug("Sending test edits")
+
+        # Send a lot of edits in a row, to ensure we don't lose any
+        # from throttling being ignored.
+        test_message.edit(
+            "**this is a** test edit and should be edited again")
+        test_message.edit(
+            "this is **another test edit** and should be edited again")
+        test_message.edit(
+            "this is **yet** another test edit and **should be edited again**")
+        test_message.edit(test_edit_content)
+
+        @get_event
+        def test_edit(event):
+            return (
+                isinstance(event, events.MessageEdited)
+                and test_edit_nonce in event.content
+            )
+
+        logger.debug("Observed final test edit")
+
+        assert test_edit.message_id == test_message.message_id
+        assert test_edit.message_edits == 4
 
         wrapper.logout()
