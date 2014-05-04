@@ -4,41 +4,32 @@ import Queue
 import threading
 import logging
 import logging.handlers
+import warnings
 
-import enum
+import BeautifulSoup
 
-from . import browser
-
-
-TOO_FAST_RE = "You can perform this action again in (\d+) seconds"
+from . import browser, events
 
 
-def _getLogger():
-    logHandler = logging.handlers.TimedRotatingFileHandler(
-        filename='async-wrapper.log',
-        when="midnight", delay=True, utc=True, backupCount=7,
-    )
-    logHandler.setFormatter(logging.Formatter(
-        "%(asctime)s: %(levelname)s: %(threadName)s: %(message)s"
-    ))
-    logger = logging.Logger(__name__)
-    logger.addHandler(logHandler)
-    logger.setLevel(logging.DEBUG)
-    return logger
+TOO_FAST_RE = r"You can perform this action again in (\d+) seconds"
+
+
+logger = logging.getLogger(__name__)
 
 
 class SEChatWrapper(object):
     def __init__(self, site="SE"):
-        self.logger = _getLogger()
+        self.logger = logger.getChild('SEChatWraper')
+
         if site == 'MSO':
             self.logger.warn("'MSO' should no longer be used, use 'MSE' instead.")
             site = 'MSE'
         self.br = browser.SEChatBrowser()
         self.site = site
         self._previous = None
-        self.message_queue = Queue.Queue()
+        self.request_queue = Queue.Queue()
         self.logged_in = False
-        self.messages = 0
+        self._requests_served = 0
         self.thread = threading.Thread(target=self._worker, name="message_sender")
         self.thread.setDaemon(True)
 
@@ -64,18 +55,35 @@ class SEChatWrapper(object):
 
     def logout(self):
         assert self.logged_in
-        self.message_queue.put(SystemExit)
+        self.request_queue.put(SystemExit)
         self.logger.info("Logged out.")
         self.logged_in = False
 
     def sendMessage(self, room_id, text):
-        self.message_queue.put((room_id, text))
+        warnings.warn(
+            "Use send_message instead of sendMessage",
+            DeprecationWarning, stacklevel=1)
+        return self.send_message(room_id, text)
+
+    def send_message(self, room_id, text):
+        """
+        Queues a message for sending to a given room.
+        """
+        self.request_queue.put(('send', room_id, text))
         self.logger.info("Queued message %r for room_id #%r.", text, room_id)
-        self.logger.info("Queue length: %d.", self.message_queue.qsize())
+        self.logger.info("Queue length: %d.", self.request_queue.qsize())
+
+    def edit_message(self, message_id, text):
+        """
+        Queues an edit to be made to a message.
+        """
+        self.request_queue.put(('edit', message_id, text))
+        self.logger.info("Queued edit %r for message_id #%r.", text, message_id)
+        self.logger.info("Queue length: %d.", self.request_queue.qsize())
 
     def __del__(self):
         if self.logged_in:
-            self.message_queue.put(SystemExit)
+            self.request_queue.put(SystemExit)
             # todo: underscore everything used by
             # the thread so this is guaranteed
             # to work.
@@ -85,18 +93,22 @@ class SEChatWrapper(object):
         assert self.logged_in
         self.logger.info("Worker thread reporting for duty.")
         while True:
-            next = self.message_queue.get() # blocking
-            if next == SystemExit:
+            next_action = self.request_queue.get() # blocking
+            if next_action == SystemExit:
                 self.logger.info("Worker thread exits.")
                 return
             else:
-                self.messages += 1
-                room_id, text = next
+                action_type = next_action[0]
+
+                self._requests_served += 1
                 self.logger.info(
-                    "Now serving customer %d, %r for room #%s.",
-                    self.messages, text, room_id)
-                self._actuallySendMessage(room_id, text) # also blocking.
-            self.message_queue.task_done()
+                    "Now serving customer %d, %r",
+                    self._requests_served, next_action)
+
+                self._do_action_despite_throttling(next_action)
+
+            self.request_queue.task_done()
+
 
     # Appeasing the rate limiter gods is hard.
     BACKOFF_MULTIPLIER = 2
@@ -104,8 +116,14 @@ class SEChatWrapper(object):
 
     # When told to wait n seconds, wait n * BACKOFF_MULTIPLIER + BACKOFF_ADDER
 
-    def _actuallySendMessage(self, room_id, text):
-        room_id = str(room_id)
+    def _do_action_despite_throttling(self, action):
+        action_type = action[0]
+        if action_type == 'send':
+            action_type, room_id, text = action
+        else:
+            assert action_type == 'edit'
+            action_type, message_id, text = action
+
         sent = False
         attempt = 0
         if text == self._previous:
@@ -114,9 +132,17 @@ class SEChatWrapper(object):
             wait = 0
             attempt += 1
             self.logger.debug("Attempt %d: start.", attempt)
-            response = self.br.postSomething(
-                "/chats/"+room_id+"/messages/new",
-                {"text": text})
+
+            if action_type == 'send':
+                response = self.br.postSomething(
+                    '/chats/%s/messages/new' % (room_id,),
+                    {'text': text})
+            else:
+                assert action_type == 'edit'
+                response = self.br.postSomething(
+                    '/messages/%s' % (message_id,),
+                    {'text': text})
+
             if isinstance(response, str):
                 match = re.match(TOO_FAST_RE, response)
                 if match: # Whoops, too fast.
@@ -161,7 +187,7 @@ class SEChatWrapper(object):
         room_activity = activity.get('r' + room_id, {})
         room_events_data = room_activity.get('e', [])
         room_events = [
-            Event(self, data) for data in room_events_data if data]
+            events.make(data, self) for data in room_events_data if data]
         return room_events
 
     def watchRoom(self, room_id, on_event, interval):
@@ -177,72 +203,3 @@ class SEChatWrapper(object):
                 on_event(event, self)
 
         self.br.watch_room_socket(room_id, on_activity)
-
-
-class Event(object):
-    @enum.unique
-    class Types(enum.IntEnum):
-        message_posted = 1
-        message_edited = 2
-        user_entered = 3
-        user_left = 4
-        room_name_changed = 5
-        message_starred = 6
-        debug_message = 7
-        user_mentioned = 8
-        message_flagged = 9
-        message_deleted = 10
-        file_added = 11
-        moderator_flag = 12
-        user_settings_changed = 13
-        global_notification = 14
-        access_level_changed = 15
-        user_notification = 16
-        invitation = 17
-        message_reply = 18
-        message_moved_out = 19
-        message_moved_in = 20
-        time_break = 21
-        feed_ticker = 22
-        user_suspended = 29
-        user_merged = 30
-
-        @classmethod
-        def by_value(self):
-            enums_by_value = {}
-            for enum_value in self:
-                enums_by_value[enum_value.value] = enum_value
-            return enums_by_value
-
-    def __init__(self, wrapper, data):
-        assert data, "empty data passed to Event()!"
-
-        self._data = data
-        # Many users will still need to access the raw ._data until
-        # this class is more fleshed-out.
-
-        self.wrapper = wrapper
-
-        self.type = data['event_type']
-        self.event_id = data['id']
-        self.room_id = data['room_id']
-        self.room_name = data['room_name']
-        self.time_stamp = data['time_stamp']
-
-        self.logger = logging.getLogger(str(self))
-
-        try:
-            # try to use a Types int enum value instead of a plain int
-            self.type = self.Types.by_value()[self.type]
-        except KeyError:
-            self.logger.info("Unrecognized event type: %s", self.type)
-
-        if self.type == self.Types.message_posted:
-            self.content = self._data['content']
-            self.user_name = self._data['user_name']
-            self.user_id = self._data['user_id']
-            self.message_id = self._data['message_id']
-
-    def __str__(self):
-        return "<chatexchange.wrapper.Event type=%s at %s>" % (
-            id(self), self.type)
