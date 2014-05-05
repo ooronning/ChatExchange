@@ -210,6 +210,7 @@ class RoomSocketWatcher(object):
         self.room_id = str(room_id)
         self.thread = None
         self.on_activity = on_activity
+        self.killed = False
 
     def start(self):
         events_data = self.browser.postSomething(
@@ -239,7 +240,7 @@ class RoomSocketWatcher(object):
 
     def _runner(self):
         #look at wsdump.py later to handle opcodes
-        while True:
+        while not self.killed:
             a = self.ws.recv()
 
             if a != None and a != "":
@@ -254,6 +255,7 @@ class RoomPollingWatcher(object):
         self.thread = None
         self.on_activity = on_activity
         self.interval = interval
+        self.killed = False
 
     def start(self):
         self.thread = threading.Thread(target=self._runner)
@@ -261,7 +263,7 @@ class RoomPollingWatcher(object):
         self.thread.start()
 
     def _runner(self):
-        while(True):
+        while not self.killed:
             last_event_time = self.browser.rooms[self.room_id]['eventtime']
 
             activity = self.browser.postSomething(
