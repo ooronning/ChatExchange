@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='ChatExchange',
-    version='0.0.3',
+    version='0.0.4.dev',
     url='https://github.com/Manishearth/ChatExchange',
     packages=[
         'chatexchange'
@@ -11,6 +11,7 @@ setuptools.setup(
         'beautifulsoup4>=4.3.2',
         'requests>=2.2.1',
         'websocket-client>=0.13.0',
+        'futures==3.0.5',
         # only for dev:
         'coverage==3.7.1',
         'epydoc>=3.0.1',

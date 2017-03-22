@@ -14,6 +14,8 @@ import threading
 import weakref
 import requests
 
+import concurrent.futures
+
 from . import browser, events, messages, rooms, users
 
 
@@ -68,12 +70,17 @@ class Client(object):
         self._previous = None
         self._recently_gotten_objects = collections.deque(maxlen=self._max_recently_gotten_objects)
         self._requests_served = 0
-        self._thread = threading.Thread(target=self._worker, name="message_sender")
-        self._thread.setDaemon(True)
+        self._executor = concurrent.futures.ThreadPoolExecutor()
 
         if email or password:
             assert email and password
             self.login(email, password)
+    
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.logout()
 
     def get_message(self, message_id, **attrs_to_set):
         """
@@ -141,7 +148,7 @@ class Client(object):
 
         self.logged_in = True
         self.logger.info("Logged in.")
-        self._thread.start()
+        self._working = self._executor.submit(self._worker)
 
     def logout(self):
         """
@@ -157,6 +164,7 @@ class Client(object):
             watcher.killed = True
 
         self._request_queue.put(SystemExit)
+
         self.logger.info("Logged out.")
         self.logged_in = False
 
@@ -174,7 +182,8 @@ class Client(object):
         while True:
             next_action = self._request_queue.get()  # blocking
             if next_action == SystemExit:
-                self.logger.info("Worker thread exits.")
+                self.logger.info("Worker thread and pool shutting down.")
+                self._executor.shutdown(wait=False)
                 return
             else:
                 self._requests_served += 1
@@ -202,7 +211,7 @@ class Client(object):
     def _do_action_despite_throttling(self, action):
         action_type = action[0]
         if action_type == 'send':
-            action_type, room_id, text = action
+            action_type, room_id, text, put_sent_message = action
         else:
             assert action_type == 'edit' or action_type == 'delete'
             action_type, message_id, text = action
@@ -272,8 +281,14 @@ class Client(object):
                 self._previous = text
 
             time.sleep(wait)
-        if action_type == 'send' and isinstance(unpacked, dict) and self.on_message_sent is not None:
-            self.on_message_sent(response.json()["id"], room_id)
+
+        if action_type == 'send' and isinstance(unpacked, dict):
+            sent_message_id = response.json()["id"]
+            put_sent_message(self.get_message(sent_message_id))
+            if self.on_message_sent is not None:
+                self.on_message_sent(sent_message_id, room_id)
+
+        # TODO: return a Future for the message we sent.
 
     def _join_room(self, room_id):
         self._br.join_room(room_id)

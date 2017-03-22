@@ -13,7 +13,7 @@ import chatexchange.events
 logger = logging.getLogger(__name__)
 
 
-def main(args):
+def main():
     setup_logging()
 
     # Run `. setp.sh` to set the below testing environment variables
@@ -30,22 +30,20 @@ def main(args):
     else:
         password = getpass.getpass("Password: ")
 
-    client = chatexchange.client.Client(host_id)
-    client.login(email, password)
+    with chatexchange.Client(host_id) as chat:
+        chat.login(email, password)
 
-    room = client.get_room(room_id)
-    room.join()
-    room.watch(on_message)
+        room = chat.get_room(room_id)
+        room.join()
+        room.watch(on_message)
 
-    print("(You are now in room #%s on %s.)" % (room_id, host_id))
-    while True:
-        message = input("<< ")
-        room.send_message(message)
-
-    client.logout()
+        print("(You are now in room #%s on %s.)" % (room_id, host_id))
+        while True:
+            message = input("<< ")
+            room.send_message(message)
 
 
-def on_message(message, client):
+def on_message(message, chat):
     if not isinstance(message, chatexchange.events.MessagePosted):
         # Ignore non-message_posted events.
         logger.debug("event: %r", message)
@@ -53,9 +51,8 @@ def on_message(message, client):
 
     print("")
     print(">> (%s) %s" % (message.user.name, message.content))
+
     if message.content.startswith('!!/random'):
-        print(message)
-        print("Spawning thread")
         message.message.reply(str(random.random()))
 
 

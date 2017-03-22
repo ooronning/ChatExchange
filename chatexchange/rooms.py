@@ -65,9 +65,12 @@ class Room(object):
         if len(text) == 0:
             self._logger.info("Could not send message because it was empty.")
             return
-        self._client._request_queue.put(('send', self.id, text))
+        sentMessageQueue = queue.Queue(1)
+        self._client._request_queue.put(('send', self.id, text, sentMessageQueue.put))
         self._logger.info("Queued message %r for room_id #%r.", text, self.id)
         self._logger.info("Queue length: %d.", self._client._request_queue.qsize())
+
+        return self._client._executor.submit(lambda: sentMessageQueue.get())
 
     def watch(self, event_callback):
         return self.watch_polling(event_callback, 3)

@@ -47,7 +47,7 @@ if live_testing.enabled:
         my_message = None
 
         with sandbox.new_messages() as messages:
-            sandbox.send_message("hello worl")
+            sent_message_future = sandbox.send_message("hello worl")
 
             for message in messages:
                 if message.owner is me:
@@ -56,6 +56,9 @@ if live_testing.enabled:
                     break
                 else:
                     logger.info("ignoring message: %r", message)
+            
+        sent_message = sent_message_future.result()
+        assert sent_message == my_message
 
         with sandbox.new_events(MessageEdited) as edits:
             my_message.edit("hello world")
