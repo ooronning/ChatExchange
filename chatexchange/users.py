@@ -31,3 +31,7 @@ class User(object):
         self.reputation = data['reputation']
         self.last_seen = data['last_seen']
         self.last_message = data['last_message']
+
+    def __repr__(self):
+        return "<%s.%s with id %r on %s>" % (
+            type(self).__module__, type(self).__name__, self.id, self._client.host)
