@@ -2,6 +2,7 @@ stages:
   - test-python3-latest
   - test-python2-latest
   - build
+  - verify
   - deploy
 
 test-python3-latest:
@@ -24,20 +25,75 @@ build-epydocs:
   script:
   - pip install .
   - make epydocs
+  only:
+  - master
+  - gl-pages
   artifacts:
     paths:
     - epydocs/
 
-pages:
-  stage: deploy
-  dependencies:
-  - build-epydocs
+build-dist:
+  stage: build
+  image: python:3
   only:
   - master
   - gl-pages
+  script:
+  - pip install wheel
+  - python setup.py sdist bdist_wheel
+  artifacts:
+    paths:
+    - dist/
+
+verify-dist-python2-wheel:
+  stage: verify
   image: python:2
+  variables:
+    GIT_STRATEGY: none
+  dependencies:
+  - build-dist
+  script:
+  - pip install dist/ChatExchange-*-py2.py3-none-any.whl
+  - (cd dist/; echo ChatExchange-*-py2.py3-none-any.whl > wheel.txt)
+  - echo >> dist/wheel.txt
+  - pip show chatexchange >> dist/wheel.txt
+  - echo >> dist/wheel.txt
+  - python -c "help(__import__('chatexchange'))" | tee -a dist/wheel.txt
+  artifacts:
+    paths:
+    - dist/wheel.txt
+
+verify-dist-python3-source:
+  stage: verify
+  image: python:3
+  variables:
+    GIT_STRATEGY: none
+  dependencies:
+  - build-dist
+  script:
+  - pip install dist/ChatExchange-*.tar.gz
+  - (cd dist/; echo ChatExchange-*.tar.gz > source.txt)
+  - echo >> dist/source.txt
+  - pip show chatexchange >> dist/source.txt
+  - echo >> dist/source.txt
+  - python -c "help(__import__('chatexchange'))" | tee -a dist/source.txt
+  artifacts:
+    paths:
+    - dist/source.txt
+
+pages:
+  stage: deploy
+  image: debian
+  variables:
+    GIT_STRATEGY: none
+  dependencies:
+  - build-epydocs
+  - build-dist
+  - verify-dist-python2-wheel
+  - verify-dist-python3-source
   script:
   - mkdir public/
+  - mv dist/ public/dist/
   - mv epydocs/ public/epydocs/
   artifacts:
     paths:
