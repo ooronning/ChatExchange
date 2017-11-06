@@ -7,7 +7,7 @@ import contextlib
 import collections
 import logging
 
-from . import _utils, events
+from . import _utils, events, messages
 
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,11 @@ class Room(object):
         while next_url:
             data = self._client._br.get_transcript(next_url)
 
-            next_url = data.get('previous_day_url') = '/0-24'
+            for message_data in reversed(data['messages']):
+                # not sure this is accurate
+                yield messages.Message(**message_data)
+
+            next_url = data.get('previous_day_url') + '/0-24'
 
     @property
     def text_description(self):
