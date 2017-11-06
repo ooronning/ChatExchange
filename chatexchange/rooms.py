@@ -42,6 +42,17 @@ class Room(object):
         ]
         self.tags = data['tags']
 
+    def old_messages(self):
+        """
+        Returns all messages in the room in reverse-chronological order.
+        """
+
+        next_url = '/transcript/{}/0-24'.format(self.id)
+        while next_url:
+            data = self._client._br.get_transcript(next_url)
+
+            next_url = data.get('previous_day_url') = '/0-24'
+
     @property
     def text_description(self):
         if self.description is not None:

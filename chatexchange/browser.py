@@ -23,7 +23,7 @@ class Browser(object):
     """
     An interface for scraping and making requests to Stack Exchange chat.
     """
-    user_agent = ('ChatExchange/0.dev '
+    user_agent = ('ChatExchange/3.0.0-dev.0 '
                   '(+https://github.com/Manishearth/ChatExchange)')
 
     chat_fkey = _utils.LazyFrom('_update_chat_fkey_and_user')
@@ -417,8 +417,10 @@ class Browser(object):
         """
         Returns the data from the transcript page associated with message_id.
         """
-        transcript_soup = self.get_soup(
-            'transcript/message/%s' % (message_id,))
+        return self.get_transcript('transcript/message/%s' % (message_id,), message_id)
+
+    def get_transcript(self, transcript_url, required_message_id=None):
+        transcript_soup = self.get_soup(transcript_url)
 
         room_soups = transcript_soup.select('.room-name a')
         room_soup = room_soups[-1]
@@ -440,7 +442,7 @@ class Browser(object):
             for message_soup in message_soups:
                 this_message_id = int(message_soup['id'].split('-')[1])
 
-                if this_message_id == message_id:
+                if this_message_id == required_message_id:
                     seen_target_message = True
 
                 edited = bool(message_soup.select('.edits'))
@@ -482,13 +484,17 @@ class Browser(object):
 
                 messages_data.append(message_data)
 
-        if not seen_target_message:
-            logger.error("Did not see target message %s in scraped page." % (message_id))
+        if required_message_id and not seen_target_message:
+            logger.error("Did not see target message %s in scraped page." % (required_message_id))
 
         data = {
             'room_id': room_id,
             'room_name': room_name,
-            'messages': messages_data
+            'messages': messages_data,
+            'first_day_url': None,
+            'previous_day_url': None,
+            'next_day_url': None,
+            'last_day_url': None,
         }
 
         return data
