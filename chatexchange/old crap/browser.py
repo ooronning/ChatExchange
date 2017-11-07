@@ -487,10 +487,10 @@ class Browser(object):
             'room_id': room_id,
             'room_name': room_name,
             'messages': messages_data,
-            'first_day_url': None,
-            'previous_day_url': None,
-            'next_day_url': None,
-            'last_day_url': None,
+            'first_day_url': first_day_url,
+            'previous_day_url': previous_day_url or first_day_url,
+            'next_day_url': next_day_url or last_day_url,
+            'last_day_url': last_day_url,
         }
 
         return data

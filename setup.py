@@ -14,6 +14,7 @@ setuptools.setup(
         'websocket-client>=0.13.0',
         'sqlalchemy==*',
         'coloredlogs==*',
+        'hashids==*',
         # only for dev:
         'coverage==3.7.1',
         'epydoc>=3.0.1',

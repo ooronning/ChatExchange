@@ -12,6 +12,7 @@ requests = ">=2.2.1"
 websocket-client = ">=0.13.0"
 sqlalchemy = "*"
 coloredlogs = "*"
+hashids = "*"
 
 
 [dev-packages]
