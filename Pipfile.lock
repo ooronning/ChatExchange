@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "2ddc343f5820c1fc7211fec7fc4560ef407bf3547cdc15b3697d5bd7e838d5a3"
+            "sha256": "e30c332948a21bae15bc1acd8a4c852c60dd398de08ac276e66093789651ba00"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -49,6 +49,28 @@
             ],
             "version": "==3.0.4"
         },
+        "colorama": {
+            "hashes": [
+                "sha256:463f8483208e921368c9f306094eb6f725c6ca42b0f97e313cb5d5512459feda",
+                "sha256:48eb22f4f8461b1df5734a074b57042430fb06e1d61bd1e11b078c0fe6d7a1f1"
+            ],
+            "markers": "sys_platform == 'win32'",
+            "version": "==0.3.9"
+        },
+        "coloredlogs": {
+            "hashes": [
+                "sha256:537f898c9b22bc1d50c7c159a289020f3418c1b06a4a43bbb74910e46bbf3c18",
+                "sha256:894641ed5e8c48e01fa0b1d62b15cd32030c6c16e1dda42f6ce5f966ac558cae"
+            ],
+            "version": "==7.3"
+        },
+        "humanfriendly": {
+            "hashes": [
+                "sha256:43a43575cc5c1506a50fb5a536757aa0c2ae94c0ec10572b368510c878fdc0b9",
+                "sha256:f1ebb406d37478228b92543c12c27c9a827782d8d241260b3a06512c7f7c3a5e"
+            ],
+            "version": "==4.4.1"
+        },
         "idna": {
             "hashes": [
                 "sha256:8c7309c718f94b3a625cb648ace320157ad16ff131ae0af362c9f21b80ef6ec4",
@@ -69,6 +91,12 @@
                 "sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9"
             ],
             "version": "==1.11.0"
+        },
+        "sqlalchemy": {
+            "hashes": [
+                "sha256:8b79a5ed91cdcb5abe97b0045664c55c140aec09e5dd5c01303e23de5fe7a95a"
+            ],
+            "version": "==1.1.15"
         },
         "urllib3": {
             "hashes": [

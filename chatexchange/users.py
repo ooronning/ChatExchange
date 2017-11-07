@@ -2,6 +2,7 @@ import logging
 
 from . import _utils
 
+from .models import user
 
 logger = logging.getLogger(__name__)
 

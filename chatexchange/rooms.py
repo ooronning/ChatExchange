@@ -1,8 +1,5 @@
 import sys
-if sys.version_info[0] == 2:
-    import Queue as queue
-else:
-    import queue
+import queue
 import contextlib
 import collections
 import logging
@@ -53,9 +50,11 @@ class Room(object):
 
             for message_data in reversed(data['messages']):
                 # not sure this is accurate
-                yield messages.Message(**message_data)
+                yield self._client.get_message(message_data['id'], **message_data)
 
-            next_url = data.get('previous_day_url') + '/0-24'
+            next_url = data.get('previous_day_url')
+            if next_url:
+                next_url += + '/0-24'
 
     @property
     def text_description(self):

@@ -10,6 +10,8 @@ name = "pypi"
 "beautifulsoup4" = ">=4.3.2"
 requests = ">=2.2.1"
 websocket-client = ">=0.13.0"
+sqlalchemy = "*"
+coloredlogs = "*"
 
 
 [dev-packages]

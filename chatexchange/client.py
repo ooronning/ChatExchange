@@ -1,18 +1,12 @@
 import sys
-if sys.version_info[0] == 2:
-    import Queue as queue
-else:
-    import queue
-import logging
-if sys.version_info[:2] <= (2, 6):
-    logging.Logger.getChild = lambda self, suffix:\
-        self.manager.getLogger('.'.join((self.name, suffix)) if self.root is not self else suffix)
+import queue
 import collections
 import re
 import time
 import threading
 import weakref
 import requests
+import logging
 
 from . import browser, events, messages, rooms, users
 
