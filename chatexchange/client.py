@@ -3,51 +3,49 @@ from contextlib import contextmanager
 import requests
 import sqlalchemy.orm
 
-from . import models
-from . import parser
-from . import _seed
+from . import models, _parser, _seed
 
 
-class LiveRoom(models.Room):
-    _live_server = None
+class Room(models.Room):
+    _client_server = None
 
     @property
     def owner(self):
-        return self._live_server.get_user(self.owner_id)
+        return self._client_server.get_user(self.owner_id)
 
 
-class LiveUser(models.User):
-    _live_server = None
+class User(models.User):
+    _client_server = None
 
 
-class LiveMessage(models.Message):
-    _live_server = None
+class Message(models.Message):
+    _client_server = None
 
     @property
     def server(self):
-        return self._live_server
+        return self._client_server
 
     @property
     def owner(self):
-        return self._live_server.get_user(self.owner_id)
+        return self._client_server.get_user(self.owner_id)
 
     @property
     def room(self):
-        return self._live_server.get_room(self.room_id)
+        return self._client_server.get_room(self.room_id)
 
 
-class LiveServer(models.Server):
+class Server(models.Server):
     _client = None
 
-    def get_room(self, room_id: int) -> LiveRoom:
+    def get_room(self, room_id: int) -> Room:
         response = self._client._web_session.get('%s/transcript/%s' % (self.url, room_id))
-        transcript = parser.TranscriptPage(response)
+        transcript = _parser.TranscriptPage(response)
         transcript.room_id
 
-    def get_user(self, room_id: int) -> LiveUser:
+    def get_user(self, room_id: int) -> User:
         pass
 
-    def get_message(self, room_id: int) -> LiveMessage:
+    def get_message(self, room_id: int) -> Message:
         pass
 
 
@@ -60,12 +58,12 @@ class Client(object):
             'User-Agent': self.user_agent
         })
 
-        self._sql_engine = sqlalchemy.create_engine('sqlite:///:memory:')
+        self.sql_engine = sqlalchemy.create_engine('sqlite:///:memory:')
         self._sql_sessionmaker = sqlalchemy.orm.sessionmaker(
-            bind=self._sql_engine,
+            bind=self.sql_engine,
             expire_on_commit=False)
 
-        models._base._Base.metadata.create_all(self._sql_engine)
+        models._base._Base.metadata.create_all(self.sql_engine)
 
         with self.sql_session() as sql:
             for row in _seed.data():
@@ -83,9 +81,9 @@ class Client(object):
         finally:
             session.close()
 
-    def get_server(self, slug: str) -> LiveServer:
+    def get_server(self, slug: str) -> Server:
         with self.sql_session() as sql:
-            server = sql.query(LiveServer).filter(models.Server.slug == slug).one()
+            server = sql.query(Server).filter(models.Server.slug == slug).one()
         server.set(_client=self)
         return server
 

@@ -180,7 +180,6 @@ def data():
         name="\u202EShadow's Sandbox")
     yield mse_sandbox
 
-    return
     # Some Messages:
     se_hello = models.Message(
         meta_id=1,
@@ -188,7 +187,9 @@ def data():
         room_meta_id=se_sandbox.meta_id,
         owner_meta_id=se_jeremy.meta_id,
         id=40990576,
-        content="hello, world")
+        content_text="hello, world",
+        content_html="hello, world",
+        content_markdown="hello, world")
     yield se_hello
     so_hello = models.Message(
         meta_id=2,
@@ -196,7 +197,9 @@ def data():
         room_meta_id=so_sandbox.meta_id,
         owner_meta_id=so_jeremy.meta_id,
         id=39911857,
-        content="hello, world")
+        content_text="hello, world",
+        content_html="hello, world",
+        content_markdown="hello, world")
     yield so_hello
     mse_tavern_hello = models.Message(
         meta_id=3,
@@ -204,7 +207,9 @@ def data():
         room_meta_id=mse_sandbox.meta_id,
         owner_meta_id=mse_jeremy.meta_id,
         id=6472666,
-        content="hello, world")
+        content_text="hello, world",
+        content_html="hello, world",
+        content_markdown="hello, world")
     yield mse_tavern_hello
     mse_sandbox_hello = models.Message(
         meta_id=4,
@@ -212,5 +217,7 @@ def data():
         room_meta_id=mse_sandbox.meta_id,
         owner_meta_id=mse_jeremy.meta_id,
         id=6472649,
-        content="hello, world")
+        content_text="hello, world",
+        content_html="hello, world",
+        content_markdown="hello, world")
     yield mse_sandbox_hello

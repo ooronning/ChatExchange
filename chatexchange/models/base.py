@@ -9,22 +9,20 @@ import sqlalchemy.ext.declarative
 
 from .. import _obj_dict
 
+
+
 _key = 'adbbf3aa342bc82736d0ee71b2a0650e05b2edd21082e1291ae161777550ba0c71002b9ce3ad7aa19c8a4641223f8f4e82bab7ebbf5335d01046cdc5a462bdfe'
 
 
-
-_Base = sqlalchemy.ext.declarative.declarative_base()
-
-
-
-class _MetaMixin(object):
+@sqlalchemy.ext.declarative.declarative_base
+class Base(object):
     meta_id = Column(Integer, primary_key=True)
     meta_created = Column(DateTime, default=datetime.datetime.now)
     meta_updated = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     meta_deleted = Column(DateTime, default=None)
 
     __init__ = _obj_dict.update
-    set = _obj_dict.update
+    set = _obj_dict.updated
     
     __repr__ = _obj_dict.repr
 
@@ -53,5 +51,3 @@ class _MetaMixin(object):
         slugger = hashids.Hashids(salt=salt, min_length=min_length)
         meta_id, = slugger.decode(meta_slug)
         return meta_id
-
-bases = _Base, _MetaMixin

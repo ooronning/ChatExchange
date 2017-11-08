@@ -9,10 +9,10 @@ from . import _base, server
 class Message(*_base.bases):
     __tablename__ = 'Message'
     server_meta_id = Column(Integer, ForeignKey('Server.meta_id'))
+    room_meta_id = Column(Integer, ForeignKey('Room.meta_id'))
+    owner_meta_id = Column(Integer, ForeignKey('User.meta_id'))
 
     id = Column(Integer, nullable=False)
-
-    owner_id = Column(Integer)
 
     content_html = Column(String)
     content_text = Column(String)

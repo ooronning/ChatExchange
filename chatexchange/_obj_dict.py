@@ -4,8 +4,12 @@ import pprintpp
 
 def update(o: object, **attrs):
     for name, value in attrs.items():
-        assert hasattr(o, name)
+        assert hasattr(o, name), "attribute %r does not exist on %r" % (name, o)
         setattr(o, name, value)
+
+
+def updated(o: object, **attrs):
+    update(o, **attrs)
     return o
 
 
