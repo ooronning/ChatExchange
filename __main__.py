@@ -6,7 +6,7 @@ import time
 import coloredlogs
 import requests
 
-import chatexchange.parser
+from chatexchange.parser import *
 
 
 email = os.environ['ChatExchangeU']
@@ -17,9 +17,8 @@ def main():
     coloredlogs.install(fmt="%(name)s %(levelname)s %(message)s", level=logging.DEBUG)
     logging.getLogger('sqlalchemy').setLevel(logging.DEBUG)
     logging.getLogger('requests').setLevel(logging.DEBUG)
-    html = requests.get('https://chat.stackexchange.com/transcript/11540/0-24').text
-    page = chatexchange.parser.TranscriptPage(html)
-    print(page)
+    print(TranscriptPage(requests.get('https://chat.stackexchange.com/transcript/11540/0-24')))
+
 
 
 if __name__ == '__main__':

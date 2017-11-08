@@ -16,6 +16,8 @@ hashids = "*"
 "html5lib" = "*"
 cssselect = "*"
 lxml = "*"
+pip = "*"
+pprintpp = "*"
 
 
 [dev-packages]
