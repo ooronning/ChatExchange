@@ -55,21 +55,22 @@ class Client(object):
     user_agent = None
 
     def __init__(self):
-
         self._web_session = requests.Session()
         self._web_session.headers.update({
             'User-Agent': self.user_agent
         })
 
         self._sql_engine = sqlalchemy.create_engine('sqlite:///:memory:')
-        self._sql_sessionmaker = sqlalchemy.orm.sessionmaker(self._sql_engine)
+        self._sql_sessionmaker = sqlalchemy.orm.sessionmaker(
+            bind=self._sql_engine,
+            expire_on_commit=False)
 
         models._base._Base.metadata.create_all(self._sql_engine)
 
-        with self.sql_session() as session:
+        with self.sql_session() as sql:
             for row in _seed.data():
-                session.add(row)
-            
+                sql.add(row)
+
     @contextmanager
     def sql_session(self):
         session = self._sql_sessionmaker()
@@ -83,8 +84,12 @@ class Client(object):
             session.close()
 
     def get_server(self, slug: str) -> LiveServer:
-        pass
-        # use the database engine to get it
+        with self.sql_session() as sql:
+            server = sql.query(LiveServer).filter(models.Server.slug == slug).one()
+        server.set(_client=self)
+        return server
+
+        raise Exception('sanity failure')
 
     def se(self):
         return self.get_server('se')
@@ -94,7 +99,3 @@ class Client(object):
     
     def mse(self):
         return self.get_server('mse')
-
-    # requests session, sql engine?
-    #  
-

@@ -8,8 +8,7 @@ from . import _base, server
 
 class User(*_base.bases):
     __tablename__ = 'User'
-    server_id = Column(Integer, ForeignKey('Server.meta_id'))
-    _id_is_unique_per_server = UniqueConstraint('server_id', 'id')
+    server_meta_id = Column(Integer, ForeignKey('Server.meta_id'))
     id = Column(Integer, nullable=False)
 
     name = Column(String)
@@ -21,3 +20,6 @@ class User(*_base.bases):
     last_seen = Column(DateTime)
     last_message = Column(DateTime)
 
+    __table_args__ = (
+        UniqueConstraint('server_meta_id', 'id'),
+    )

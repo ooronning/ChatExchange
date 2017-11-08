@@ -2,10 +2,11 @@ import pprintpp
 
 
 
-def update(o: object, **attrs) -> None:
+def update(o: object, **attrs):
     for name, value in attrs.items():
         assert hasattr(o, name)
         setattr(o, name, value)
+    return o
 
 
 def repr(o: object) -> str:

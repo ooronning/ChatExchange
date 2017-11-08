@@ -23,8 +23,8 @@ class _MetaMixin(object):
     meta_updated = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     meta_deleted = Column(DateTime, default=None)
 
-    def __init__(self, **attrs):
-        _obj_dict.update(self, attrs)
+    __init__ = _obj_dict.update
+    set = _obj_dict.update
     
     __repr__ = _obj_dict.repr
 
