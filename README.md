@@ -5,39 +5,45 @@ ChatExchange 3
 
 A Python 3 library and command-line tool for Stack Exchange chat.
 
+## Installation
+
+```
+pip install chatexchange3  # or your Python 3 packaging alternative of choice
+```
+
 ## Authentication
 
 For authenticated use specify a Stack Exchange username and password in
 the `ChatExchangeU` and `ChatExchangeP` environment variables. OpenID and
 OAuth authentication are not supported.
 
-## Installation
-
-```
-pip install chatexchange3
-```
-
 ## Command-Line Interface
 
-This hasn't been implemented.
+This hasn't been implemented, but I'd like to support things like this:
 
 Import (or update) the full history of a chatroom to the database.
 Records updated within the last 3600 seconds will be considered up-to-date.
 
 ```
-chatexchange sqlite://./data se/rooms/1 --all --max-age=3600
+chatexchange sqlite://./data se/r/1 --all --max-age=3600
 ```
 
 Add new messages to the database as they come in:
 
 ```
-chatexchange sqlite://./data se/rooms/1 --all --max-age=Infinity --watch
+chatexchange sqlite://./data chat.stackexchange.com/rooms/1 --all --max-age=Infinity --watch
 ```
 
 Send a message, then disconnect (a temporary in-memory SQLite database will be used):
 
 ```
-chatexchange  se/rooms/1 --send "hello world"
+chatexchange se/r/1 --send "hello world"
+```
+
+Or maybe using our local slugs:
+
+```
+chatexchange r/B6 -s "hello world"
 ```
 
 ## Python Interface
@@ -61,21 +67,40 @@ chatexchange  se/rooms/1 --send "hello world"
             .meta_created: DateTime
             .meta_updated: DateTime
             .meta_deleted: DateTime
-            .deleted: boolean
-            .meta_slug: str
+            @property .deleted: boolean
+            @property .meta_slug: str
             @classmethod .meta_id_from_meta_slug(meta_slug) -> int
         - .Server extends .Base
+            .url: str
+            .slug: str
+            .name: str
         - .User extends .Base
+            .server_meta_id: int
+            .id: int
+            .name: str
         - .Room extends .Base
+            .server_meta_id: int
+            .id: int
+            .name: str
         - .Message extends .Base
+            .owner_meta_id: int
+            .room_meta_id: int
+            .id: int
+            .content_html: str
+            .content_text: str # derived from the HTML
+            .content_markdown: str # usually None because we don't know it
     - .client # Extended models with a reference to the client and lots of sugar
         - .Server extends ..models.Server
             .get_user(id) -> .User()
             .get_room(id) -> .Room()
             .get_message(id) -> .Message()
         - .User extends ..models.User
+            @property .server -> .Server
         - .Room extends ..models.Room
+            @property .server -> .Server
         - .Message extends ..models.Message
+            @property .owner -> .User
+            @property .room -> .Room
 ```
 
 ### Internal (Do Not Use)
@@ -107,3 +132,9 @@ at your option.
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall
 be dual licensed as above, without any additional terms or conditions.
+
+### Contributors
+
+Please see the Git commit history or 
+https://github.com/jeremyBanks/ChatExchange/contributors and
+https://github.com/Manishearth/ChatExchange/contributors.
