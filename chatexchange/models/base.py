@@ -14,8 +14,9 @@ from .. import _obj_dict
 _key = 'adbbf3aa342bc82736d0ee71b2a0650e05b2edd21082e1291ae161777550ba0c71002b9ce3ad7aa19c8a4641223f8f4e82bab7ebbf5335d01046cdc5a462bdfe'
 
 
-@sqlalchemy.ext.declarative.declarative_base
 class Base(object):
+    __tablename__ = None
+
     meta_id = Column(Integer, primary_key=True)
     meta_created = Column(DateTime, default=datetime.datetime.now)
     meta_updated = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
@@ -51,3 +52,6 @@ class Base(object):
         slugger = hashids.Hashids(salt=salt, min_length=min_length)
         meta_id, = slugger.decode(meta_slug)
         return meta_id
+
+
+Base = sqlalchemy.ext.declarative.declarative_base(cls=Base)

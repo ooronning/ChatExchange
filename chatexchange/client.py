@@ -52,18 +52,18 @@ class Server(models.Server):
 class Client(object):
     user_agent = None
 
-    def __init__(self):
+    def __init__(self, db_path='sqlite:///:memory:'):
         self._web_session = requests.Session()
         self._web_session.headers.update({
             'User-Agent': self.user_agent
         })
 
-        self.sql_engine = sqlalchemy.create_engine('sqlite:///:memory:')
+        self.sql_engine = sqlalchemy.create_engine(db_path)
         self._sql_sessionmaker = sqlalchemy.orm.sessionmaker(
             bind=self.sql_engine,
             expire_on_commit=False)
 
-        models._base._Base.metadata.create_all(self.sql_engine)
+        models.base.Base.metadata.create_all(self.sql_engine)
 
         with self.sql_session() as sql:
             for row in _seed.data():
@@ -91,7 +91,7 @@ class Client(object):
 
     def se(self):
         return self.get_server('se')
-    
+
     def so(self):
         return self.get_server('so')
     

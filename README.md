@@ -52,7 +52,7 @@ chatexchange r/B6 -s "hello world"
 
 ```
 - chatexchange
-    - .Client() # The public interface requires 
+    - .Client(db_path='sqlite:///:memory:', credentials=None) # Start here.
         - .get_server(slug) -> .client.Server
         - .se() -> .client.Server
         - .so() -> .client.Server
@@ -73,7 +73,7 @@ chatexchange r/B6 -s "hello world"
         - .Server extends .Base
             .url: str
             .slug: str
-            .name: str
+            .name: strstr
         - .User extends .Base
             .server_meta_id: int
             .id: int

@@ -1,3 +1,4 @@
+from .base import Base
 from .server import Server
 from .user import User
 from .room import Room

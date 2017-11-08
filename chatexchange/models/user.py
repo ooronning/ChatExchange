@@ -3,10 +3,10 @@ import datetime
 import sqlalchemy
 from sqlalchemy import Column, String, Integer, Index, ForeignKey, Boolean, DateTime, UniqueConstraint
 
-from . import _base, server
+from . import base, server
 
 
-class User(*_base.bases):
+class User(base.Base):
     __tablename__ = 'User'
     server_meta_id = Column(Integer, ForeignKey('Server.meta_id'))
     id = Column(Integer, nullable=False)

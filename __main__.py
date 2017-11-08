@@ -8,7 +8,6 @@ import coloredlogs
 import requests
 
 from chatexchange.client import Client
-from chatexchange.parser import TranscriptPage
 
 
 
@@ -25,7 +24,7 @@ def main():
     client = Client()
 
     charcoal_hq = client.se().get_room(11540)
-    
+
     print(charcoal_hq)
 
 
