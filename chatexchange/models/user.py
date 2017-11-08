@@ -6,10 +6,10 @@ from sqlalchemy import Column, String, Integer, Index, ForeignKey, Boolean, Date
 from . import _base, server
 
 
-class User(_base.Base):
+class User(*_base.bases):
     __tablename__ = 'User'
-    server_id = Column(Integer, ForeignKey(server.Server))
-    id_unique_per_server = UniqueConstraint('server_id', 'id')
+    server_id = Column(Integer, ForeignKey('Server.meta_id'))
+    _id_is_unique_per_server = UniqueConstraint('server_id', 'id')
     id = Column(Integer, nullable=False)
 
     name = Column(String)
@@ -20,4 +20,4 @@ class User(_base.Base):
     reputation = Column(Integer)
     last_seen = Column(DateTime)
     last_message = Column(DateTime)
-    deleted_date = Column(DateTime)
+

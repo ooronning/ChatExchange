@@ -1,3 +1,4 @@
+import datetime
 import getpass
 import logging
 import os
@@ -6,6 +7,7 @@ import time
 import coloredlogs
 import requests
 
+from chatexchange.client import Client
 from chatexchange.parser import TranscriptPage
 
 
@@ -15,8 +17,16 @@ password = os.environ['ChatExchangeP']
 
 def main():
     coloredlogs.install(fmt="%(name)s %(levelname)s %(message)s", level=logging.DEBUG)
+    logging.getLogger().setLevel(logging.DEBUG)
     logging.getLogger('sqlalchemy').setLevel(logging.DEBUG)
     logging.getLogger('requests').setLevel(logging.DEBUG)
+
+    client = Client()
+
+    charcoal_hq = client.se().get_room(11540)
+    
+    print(charcoal_hq)
+
     host = 'https://chat.stackexchange.com'
 
     next_url = host + '/transcript/11540/0-25'
