@@ -1,11 +1,46 @@
+# This README is more aspirational than descriptive, that is to say, this is mostly `NOT IMPLEMENTED NOT IMPLEMENTED NOT IMPLEMENTED NOT IMPLEMENTED NOT IMPLEMENTED NOT IMPLEMENTED NOT IMPLEMENTED NOT IMPLEMENTED`.
+
 ChatExchange 3
 ==============
 
-A Python 3 library for talking to Stack Exchange chat.
+A Python 3 library and command-line tool for Stack Exchange chat.
 
+## Authentication
 
-## Interface
+For authenticated use specify a Stack Exchange username and password in
+the `ChatExchangeU` and `ChatExchangeP` environment variables. OpenID and
+OAuth authentication are not supported.
 
+## Installation
+
+```
+pip install chatexchange3
+```
+
+## Command-Line Interface
+
+This hasn't been implemented.
+
+Import (or update) the full history of a chatroom to the database.
+Records updated within the last 3600 seconds will be considered up-to-date.
+
+```
+chatexchange sqlite://./data se/rooms/1 --all --max-age=3600
+```
+
+Add new messages to the database as they come in:
+
+```
+chatexchange sqlite://./data se/rooms/1 --all --max-age=Infinity --watch
+```
+
+Send a message, then disconnect (a temporary in-memory SQLite database will be used):
+
+```
+chatexchange  se/rooms/1 --send "hello world"
+```
+
+## Python Interface
 
 ### Public (Please Use)
 
@@ -19,7 +54,7 @@ A Python 3 library for talking to Stack Exchange chat.
         - .sql_engine -> SQLAlchemy Engine
         - .sql_session() -> SQLAlchemy Session Bound to Engine
     - .models # SQLAlchmeny models for the data 
-        - .Base(**attrs)
+        - .Base(**attrs) extends SQLAlchemy ORM Declarative Base
             .__repr__
             .set(**attrs) -> self
             .meta_id: int
@@ -33,7 +68,7 @@ A Python 3 library for talking to Stack Exchange chat.
         - .User extends .Base
         - .Room extends .Base
         - .Message extends .Base
-    - .client # Extends the models with a reference to the client and lots of sugar
+    - .client # Extended models with a reference to the client and lots of sugar
         - .Server extends ..models.Server
             .get_user(id) -> .User()
             .get_room(id) -> .Room()
@@ -48,7 +83,7 @@ A Python 3 library for talking to Stack Exchange chat.
 ```
 - chatexchange
     - ._seed
-        - .data() # yields a bunch of seed data to be added in a ..sql_session()
+        - .data() # yields a bunch of seed data that needs to be added to new databases
     - ._parser # classes interpreting specific HTML pages as structured data
         - .TranscriptPage
     - ._obj_dict
@@ -56,7 +91,6 @@ A Python 3 library for talking to Stack Exchange chat.
         - .updated(o, **attrs) # chainable version of .update()
         - .repr(o) -> # a generic __repr__() useful for debugging
 ```
-
 
 ## License
 
