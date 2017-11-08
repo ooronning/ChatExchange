@@ -98,9 +98,16 @@ chatexchange r/B6 -s "hello world"
             @property .server -> .Server
         - .Room extends ..models.Room
             @property .server -> .Server
+            .send(content_markdown) -> asnyc???
+            .ping(user, content_markdown) -> async???
+            .messages(from=-Infinity, to=+Infinity) ->
+            .old_messages(limit=Infinity, from=-Infinity) -> async???
+            .new_message(limit=Infinity, to=+Infinity) -> async???
         - .Message extends ..models.Message
             @property .owner -> .User
             @property .room -> .Room
+            .reply(content_markdown) -> asnyc???
+            .replies() # yikes! requires fetching all following messages to check
 ```
 
 ### Internal (Do Not Use)
