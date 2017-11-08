@@ -21,4 +21,3 @@ class User(_base.Base):
     last_seen = Column(DateTime)
     last_message = Column(DateTime)
     deleted_date = Column(DateTime)
-

@@ -13,6 +13,9 @@ websocket-client = ">=0.13.0"
 sqlalchemy = "*"
 coloredlogs = "*"
 hashids = "*"
+"html5lib" = "*"
+cssselect = "*"
+lxml = "*"
 
 
 [dev-packages]
