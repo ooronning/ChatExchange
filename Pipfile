@@ -8,9 +8,8 @@ name = "pypi"
 [packages]
 
 "beautifulsoup4" = ">=4.3.2"
-requests = ">=2.2.1"
 websocket-client = ">=0.13.0"
-sqlalchemy = "*"
+SQLAlchemy = "*"
 coloredlogs = "*"
 hashids = "*"
 "html5lib" = "*"
@@ -18,6 +17,8 @@ cssselect = "*"
 lxml = "*"
 pip = "*"
 pprintpp = "*"
+aiohttp = "*"
+aiodns = "*"
 
 
 [dev-packages]

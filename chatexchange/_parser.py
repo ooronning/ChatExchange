@@ -5,7 +5,6 @@ This performs minimal interpretation, leaving that to the user.
 """
 
 import re
-from typing import MutableSequence as IList, Optional as Nullable, Union, Tuple
 from html import escape as escape_html
 
 from lxml.etree import ElementBase
@@ -17,17 +16,17 @@ from . import _obj_dict
 
 
 
-def _dom_outer_html(dom: ElementBase) -> str:
+def _dom_outer_html(dom):
     return lxml.html.tostring(dom, encoding=str, with_tail=False)
 
 
-def _dom_inner_html(dom: ElementBase) -> str:
+def _dom_inner_html(dom):
     return escape_html(dom.text, False) + ''.join(
         lxml.html.tostring(child_dom, encoding=str, with_tail=True)
         for child_dom in dom.iterchildren())
 
 
-def _dom_text_content(dom: ElementBase) -> str:
+def _dom_text_content(dom):
     return lxml.html.tostring(dom, encoding=str, method='text')
 
 
@@ -39,10 +38,10 @@ class _ParsedDOM(object):
     # Namespaced HTML elements seem to be incompatible with .cssselect().
     _parser = html5parser.HTMLParser(namespaceHTMLElements=False)
 
-    def __init__(self, dom: Union[ElementBase, Response, str]):
+    def __init__(self, dom):
         if isinstance(dom, ElementBase):
-            self._dom: ElementBase = dom
-            self.url: Nullable[str] = None
+            self._dom = dom
+            self.url = None
         else:
             if isinstance(dom, Response):
                 response = dom
@@ -60,7 +59,7 @@ class _ParsedDOM(object):
             self._dom = self._parser.parse(sanitized_html).getroot()
 
     @staticmethod
-    def _user_id_and_name_from_link(link_el: ElementBase) -> Tuple[int, int]:
+    def _user_id_and_name_from_link(link_el):
         user_name = link_el.text
         user_id = int(link_el.get('href').split('/')[2])
         return user_id, user_name
@@ -72,14 +71,14 @@ class _ParsedDOM(object):
 class TranscriptPage(_ParsedDOM):
     class Message(object):
         def __init__(self, **attrs):
-            self.id: Nullable[int] = None
-            self.content_html: Nullable[str] = None
-            self.content_text: Nullable[str] = None
-            self.room_id: Nullable[int] = None
-            self.owner_user_id: Nullable[str] = None
-            self.owner_user_name: Nullable[str] = None
-            self.edited: Nullable[bool] = None
-            self.parent_message_id: Nullable[int] = None
+            self.id = None
+            self.content_html = None
+            self.content_text = None
+            self.room_id = None
+            self.owner_user_id = None
+            self.owner_user_name = None
+            self.edited = None
+            self.parent_message_id = None
 
             _obj_dict.update(self, **attrs)
 
@@ -89,14 +88,14 @@ class TranscriptPage(_ParsedDOM):
         super().__init__(page)
 
         room_name_link ,= self._dom.cssselect('.room-name a')
-        self.room_id: int = int(room_name_link.get('href').split('/')[2])
-        self.room_name: room_name = room_name_link.text
+        self.room_id = int(room_name_link.get('href').split('/')[2])
+        self.room_name = room_name_link.text
 
-        self.first_day_url: Nullable[str] = None
-        self.previous_day_url: Nullable[str] = None
-        self.next_day_url: Nullable[str] = None
-        self.last_day_url: Nullable[str] = None
-        self.messages: IList[Message] = []
+        self.first_day_url = None
+        self.previous_day_url = None
+        self.next_day_url = None
+        self.last_day_url = None
+        self.messages = []
 
         for other_day_el in self._dom.cssselect('#main > a[href^="/transcript"]'):
             if 'first day' in other_day_el.text:

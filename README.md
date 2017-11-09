@@ -52,9 +52,49 @@ chatexchange r/B6 -s "hello world"
 
 ### Public (Please Use)
 
+The root of the interface is your `Client`, either `BlockingClient`:
+
+```
+chat = chatexchange.BlockingClient(auth=('em@ai.l', 'passw0rd'))
+sandbox = chat.se().room(room_id=1)
+hello = sandbox.send("hello, %s 😶" % (room.name))
+for i, reply in enumerate(hello.replies()):
+    if i == 0:
+        reply.reply("hello, %s. 😐" % (reply.name))
+    elif i == 1:
+        reply.reply("Hello, %s. 🙂" % (reply.name))
+    else:
+        reply.reply("Hello, %s! 😄" % (reply.name))
+        break
+
+time.sleep(1.0)
+goodbye = sandbox.send("see y'all later!")
+```
+
+or `AsyncClient`:
+
+```
+chat = chatexchange.AsyncClient(auth=('em@ai.l', 'passw0rd'))
+sandbox = await chat.se().room(room_id=1)
+hello = await sandbox.send("hello, %s 😶" % (room.name))
+async for i, reply in chatexchange.async.enumerate(hello.replies()):
+    if i == 0:
+        reply.reply("hello, %s. 😐" % (reply.name))
+    elif i == 1:
+        reply.reply("Hello, %s. 🙂" % (reply.name))
+    else:
+        reply.reply("Hello, %s! 😄" % (reply.name))
+        break
+
+await asyncio.sleep(1.0)
+goodbye = await sandbox.send("see y'all later!")
+```
+
+Here's most of the API:
+
 ```
 - chatexchange
-    - .Client(db_path='sqlite:///:memory:', credentials=None) # Start here.
+    - .Client(db_path='sqlite:///:memory:', auth=None)
         - .server(slug) -> .client.Server
         - .se() -> .client.Server
         - .so() -> .client.Server
@@ -94,6 +134,7 @@ chatexchange r/B6 -s "hello world"
             .content_markdown: str # usually None because we don't know it
     - .client # Extended models with a reference to the client and lots of sugar
         - .Server extends ..models.Server
+            .me() -> User() | None
             .user(id) -> .User()
             .room(id) -> .Room()
             .message(id) -> .Message()
@@ -119,20 +160,6 @@ If a local result is available that has been updated within the desired number
 of seconds, it will be returned immediately. If not, we'll try to request a remote
 result. If that fails, but we have a local result updated within the required
 number of seconds, return that and log a warning, else raise an error.
-
-### Examples
-
-```
-chat = chatexchange.Client()
-
-me = chat.se().me()
-sandbox = chat.se().room(1)
-
-hello = sandbox.send("hello from %s!" % (me.name))
-
-for message in hello.replies():
-    print(message.name, message.content_text)
-```
 
 ### Internal (Do Not Use)
 
