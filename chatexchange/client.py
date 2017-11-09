@@ -14,6 +14,19 @@ from ._constants import *
 logger = logging.getLogger(__name__)
 
 
+class _HttpClientSession(aiohttp.ClientSession):
+    def __init__(self, *a, **kw):
+        if 'connector' not in kw:
+            kw['connector'] = aiohttp.TCPConnector(limit_per_host=2)
+        super().__init__(*a, **kw)
+
+    def _request(self, method, url, **kwargs):
+        # see https://stackoverflow.com/a/45590516/1114
+    
+        logger.debug('%s %r', method, url)
+        return super()._request(method, url, **kwargs)
+
+
 class Client(object):
     # Defaults used to control caching:
     max_age_now     = -INFINITY
@@ -23,7 +36,7 @@ class Client(object):
     max_age_dead    = -INFINITY
 
     def __init__(self, db_path='sqlite:///:memory:', auth=None):
-        self._web_session = aiohttp.ClientSession()
+        self._web_session = _HttpClientSession()
 
         self.sql_engine = sqlalchemy.create_engine(db_path)
         self._sql_sessionmaker = sqlalchemy.orm.sessionmaker(
@@ -45,7 +58,7 @@ class Client(object):
     
     _closed = False
     def close(self):
-        if self._closed: return
+        if self._closed: raise Exception('already closed')
 
         self._web_session.close()
 
@@ -57,11 +70,10 @@ class Client(object):
     def __exit__(self, *exc_details):
         self.close()
 
-    def __del__(self):
-        self.close()
-
     @contextmanager
     def sql_session(self):
+        if self._closed: raise Exception('already closed')
+
         session = self._sql_sessionmaker()
         try:
             yield session
@@ -99,7 +111,7 @@ class Server(models.Server):
     def me(self):
         raise NotImplementedError()
 
-    def room(self,
+    async def room(self,
              room_id,
              offline=False,
              desired_max_age=Client.max_age_fresh,
@@ -125,8 +137,9 @@ class Server(models.Server):
 
             try:
                 if offline: raise Exception("offline=True")
-                response = self._client._web_session.get('https://%s/transcript/%s/0-24' % (self.host, room_id))
-                transcript = _parser.TranscriptPage(response)
+                async with self._client._web_session.get('https://%s/transcript/%s/0-24' % (self.host, room_id)) as response:
+                    html = await response.text()
+                transcript = _parser.TranscriptPage(html)
             except Exception as ex:
                 if room and room.meta_update_age <= required_max_age:
                     logger.error(ex)

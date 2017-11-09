@@ -96,18 +96,21 @@ of seconds, it will be returned immediately. If not, we'll try to request a remo
 result. If that fails, but we have a local result updated within the required
 number of seconds, return that and log a warning, else raise an error.
 
+There's also an `offline=True` option to use only local data.
+
 Here's most of the API:
 
 ```
 - chatexchange
     - .AsyncClient(db_path='sqlite:///:memory:', auth=None)
-        - .server(slug) -> .client.Server
+        - .server(slug_or_host) -> .client.Server
         - .se -> .client.Server
         - .so -> .client.Server
         - .mse -> .client.Server
         - .sql_engine -> SQLAlchemy Engine
         - .sql_session() -> SQLAlchemy Session Bound to Engine
         - some caching settings too
+
     - .models # SQLAlchmeny models for the data 
         - .Base(**attrs) extends SQLAlchemy ORM Declarative Base
             - .__repr__
@@ -118,19 +121,23 @@ Here's most of the API:
             - .meta_deleted: DateTime
             - .deleted: boolean
             - .meta_slug: str
-            @classmethod .meta_id_from_meta_slug(meta_slug) -> int
+            - @classmethod .meta_id_from_meta_slug(meta_slug) -> int
+
         - .Server extends .Base
             - .url: str
             - .slug: str
-            - .name: strstr
+            - .name: str
+
         - .User extends .Base
             - .server_meta_id: int
             - .id: int
             - .name: str
+
         - .Room extends .Base
             - .server_meta_id: int
             - .id: int
             - .name: str
+
         - .Message extends .Base
             - .owner_meta_id: int
             - .room_meta_id: int
@@ -138,6 +145,7 @@ Here's most of the API:
             - .content_html: str
             - .content_text: str # derived from the HTML
             - .content_markdown: str # usually None because we don't know it
+
     - .client # Extended models with a reference to the client and lots of sugar
         - .Server extends ..models.Server
             - async .user(id, **cache_opts) -> .User()
@@ -148,9 +156,11 @@ Here's most of the API:
             - async .me_replies(**cache_opts)
             - async .favorite_rooms(**cache_opts)
             - async .search(q, owner_id, room_id)
+
         - .User extends ..models.User
             - .server -> .Server
             - async .messages(from=EPOCH, **cache_opts)
+
         - .Room extends ..models.Room
             - .server -> .Server
             - async .send(content_markdown)
@@ -158,6 +168,7 @@ Here's most of the API:
             - async .messages(from=EPOCH, **cache_opts)
             - infinite async .new_message(to=SUNSET)
             - infinite async .all_messages(from=EPOCH, to=SUNSET, **cache_opts)
+
         - .Message extends ..models.Message
             - .owner -> .User
             - .room -> .Room
@@ -166,6 +177,7 @@ Here's most of the API:
             - async .replies(from=EPOCH, **cache_opts)
             - infinite async .new_replies(to=SUNSET)
             - infinite async .all_replies(from=EPOCH, to=SUNSET, **cache_opts)
+
     - .async # generic async utils, don't really belong, but might be useful
 ```
 
@@ -175,8 +187,10 @@ Here's most of the API:
 - chatexchange
     - ._seed
         - .data() # yields a bunch of seed data that needs to be added to new databases
+
     - ._parser # classes interpreting specific HTML pages as structured data
         - .TranscriptPage
+
     - ._obj_dict
         - .update(o, **attrs) # a generic __init__ asserting named attributes already exist 
         - .updated(o, **attrs) # chainable version of .update()
