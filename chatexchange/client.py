@@ -20,9 +20,9 @@ class Client(object):
     max_age_current = 60                # one minute until a datum is no longer "current"
     max_age_fresh   = 60 * 60 * 4       # four hours until a datum is no longer "fresh"
     max_age_alive   = 60 * 60 * 24 * 64 # two months until a datum is no longer "alive"
-    max_age_dead    = +INFINITY
+    max_age_dead    = -INFINITY
 
-    def __init__(self, db_path='sqlite:///:memory:', auth=(email, password)):
+    def __init__(self, db_path='sqlite:///:memory:', auth=None):
         self._web_session = aiohttp.ClientSession()
 
         self.sql_engine = sqlalchemy.create_engine(db_path)
@@ -42,6 +42,23 @@ class Client(object):
                 except sqlalchemy.exc.IntegrityError:
                     sql.rollback()
                     continue
+    
+    _closed = False
+    def close(self):
+        if self._closed: return
+
+        self._web_session.close()
+
+        self._closed = True
+    
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_details):
+        self.close()
+
+    def __del__(self):
+        self.close()
 
     @contextmanager
     def sql_session(self):

@@ -10,7 +10,6 @@ from html import escape as escape_html
 from lxml.etree import ElementBase
 import lxml.html
 from lxml.html import html5parser
-from requests import Response
 
 from . import _obj_dict
 
@@ -41,16 +40,10 @@ class _ParsedDOM(object):
     def __init__(self, dom):
         if isinstance(dom, ElementBase):
             self._dom = dom
-            self.url = None
         else:
-            if isinstance(dom, Response):
-                response = dom
-                response.raise_for_status()
-                html = response.text
-                self.url = response.request.url
-            else:
-                html = str(dom)
-                self.url = None
+            assert isinstance(dom, str)
+            html = str(dom)
+            self.url = None
     
             # lxml only allows characters that are valid in XML, but the web is dark and full of terrors.
             # see https://stackoverflow.com/a/25920392/1114
