@@ -56,7 +56,7 @@ The root of the interface is your `Client`, either `BlockingClient`:
 
 ```
 chat = chatexchange.BlockingClient(auth=('em@ai.l', 'passw0rd'))
-sandbox = chat.se().room(room_id=1)
+sandbox = chat.se.room(room_id=1)
 hello = sandbox.send("hello, %s 😶" % (room.name))
 for i, reply in enumerate(hello.replies()):
     if i == 0:
@@ -75,7 +75,7 @@ or `AsyncClient`:
 
 ```
 chat = chatexchange.AsyncClient(auth=('em@ai.l', 'passw0rd'))
-sandbox = await chat.se().room(room_id=1)
+sandbox = await chat.se.room(room_id=1)
 hello = await sandbox.send("hello, %s 😶" % (room.name))
 async for i, reply in chatexchange.async.enumerate(hello.replies()):
     if i == 0:
@@ -90,15 +90,21 @@ await asyncio.sleep(1.0)
 goodbye = await sandbox.send("see y'all later!")
 ```
 
+Lots of methods will take `desired_max_age=` and `required_max_age=` parameters.
+If a local result is available that has been updated within the desired number
+of seconds, it will be returned immediately. If not, we'll try to request a remote
+result. If that fails, but we have a local result updated within the required
+number of seconds, return that and log a warning, else raise an error.
+
 Here's most of the API:
 
 ```
 - chatexchange
     - .Client(db_path='sqlite:///:memory:', auth=None)
         - .server(slug) -> .client.Server
-        - .se() -> .client.Server
-        - .so() -> .client.Server
-        - .mse() -> .client.Server
+        - .se -> .client.Server
+        - .so -> .client.Server
+        - .mse -> .client.Server
         - .sql_engine -> SQLAlchemy Engine
         - .sql_session() -> SQLAlchemy Session Bound to Engine
         - some caching settings too
@@ -110,8 +116,8 @@ Here's most of the API:
             .meta_created: DateTime
             .meta_updated: DateTime
             .meta_deleted: DateTime
-            @property .deleted: boolean
-            @property .meta_slug: str
+            .deleted: boolean
+            .meta_slug: str
             @classmethod .meta_id_from_meta_slug(meta_slug) -> int
         - .Server extends .Base
             .url: str
@@ -140,26 +146,22 @@ Here's most of the API:
             .message(id) -> .Message()
             .rooms() -> .Room()[] # all rooms from most-recently-active to least
         - .User extends ..models.User
-            @property .server -> .Server
+            .server -> .Server
         - .Room extends ..models.Room
-            @property .server -> .Server
+            .server -> .Server
             .send(content_markdown) -> asnyc???
             .ping(user, content_markdown) -> async???
             .messages(from=-Infinity, to=+Infinity) ->
             .old_messages(limit=Infinity, from=-Infinity) -> async???
             .new_message(limit=Infinity, to=+Infinity) -> async???
         - .Message extends ..models.Message
-            @property .owner -> .User
-            @property .room -> .Room
+            .owner -> .User
+            .room -> .Room
             .reply(content_markdown) -> asnyc???
             .replies() # yikes! requires fetching all following messages to check
+            .old_replies(???)
+            .new_replies(???)
 ```
-
-Lots of methods will take `desired_max_age=` and `required_max_age=` parameters.
-If a local result is available that has been updated within the desired number
-of seconds, it will be returned immediately. If not, we'll try to request a remote
-result. If that fails, but we have a local result updated within the required
-number of seconds, return that and log a warning, else raise an error.
 
 ### Internal (Do Not Use)
 

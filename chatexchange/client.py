@@ -59,20 +59,23 @@ class Client(object):
         finally:
             session.close()
 
-    def server(self, slug):
+    def server(self, slug_or_url):
         with self.sql_session() as sql:
-            server = sql.query(Server).filter(models.Server.slug == slug).one()
+            server = sql.query(Server).filter(
+                (models.Server.slug == slug_or_url) |
+                (models.Server.url == slug_or_url)).one()
         server.set(_client=self)
         return server
 
-        raise Exception('sanity failure')
-
+    @property
     def se(self):
         return self.server('se')
 
+    @property
     def so(self):
         return self.server('so')
-    
+
+    @property    
     def mse(self):
         return self.server('mse')
 
