@@ -1,60 +1,11 @@
-import sys
-import logging
-import json
-import threading
-import time
-
-from bs4 import BeautifulSoup
-import requests
-import websocket
-from . import _utils
-import socket
-import re
 
 
-logger = logging.getLogger(__name__)
-
-
-class Browser(object):
-    """
-    An interface for scraping and making requests to Stack Exchange chat.
-    """
-    user_agent = ('ChatExchange/3.0.0-dev.0 '
-                  '(+https://github.com/Manishearth/ChatExchange)')
-
-    chat_fkey = _utils.LazyFrom('_update_chat_fkey_and_user')
-    user_name = _utils.LazyFrom('_update_chat_fkey_and_user')
-    user_id = _utils.LazyFrom('_update_chat_fkey_and_user')
-
-    request_timeout = 30.0
-
-    def __init__(self):
-        self.logger = logger.getChild('Browser')
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': self.user_agent
-        })
-        self.rooms = {}
-        self.sockets = {}
-        self.polls = {}
-        self.host = None
-        self.on_websocket_closed = self._default_ws_recovery
-
-    def _default_ws_recovery(self, room_id):
-        on_activity = self.sockets[room_id].on_activity
-        try:
-            self.leave_room(room_id)
-        except websocket.WebSocketConnectionClosedException:
-            pass
-        self.join_room(room_id)
-        self.watch_room_socket(room_id, on_activity)
 
     @property
     def chat_root(self):
         assert self.host, "browser has no associated host"
         return 'https://chat.%s' % (self.host,)
 
-    # request helpers
 
     def _request(
         self, method, url,
@@ -102,19 +53,7 @@ class Browser(object):
 
         return response
 
-    def get(self, url, data=None, headers=None, with_chat_root=True):
-        return self._request('get', url, data, headers, with_chat_root)
 
-    def post(self, url, data=None, headers=None, with_chat_root=True):
-        return self._request('post', url, data, headers, with_chat_root)
-
-    def get_soup(self, url, data=None, headers=None, with_chat_root=True):
-        response = self.get(url, data, headers, with_chat_root)
-        return BeautifulSoup(response.text, "html.parser")
-
-    def post_soup(self, url, data=None, headers=None, with_chat_root=True):
-        response = self.post(url, data, headers, with_chat_root)
-        return BeautifulSoup(response.text, "html.parser")
 
     def post_fkeyed(self, url, data=None, headers=None):
         if data is None:

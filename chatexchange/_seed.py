@@ -1,10 +1,7 @@
 import datetime
 
 from . import models
-
-
-
-epoch = datetime.datetime.fromtimestamp(1217514151)
+from ._constants import *
 
 
 def data():
@@ -13,21 +10,21 @@ def data():
     se = models.Server(
         meta_id=1,
         name="Stack Exchange",
-        url='https://chat.stackexchange.com',
+        host='chat.stackexchange.com',
         slug='se')
     yield se
 
     so = models.Server(
         meta_id=2,
         name="Stack Overflow",
-        url='https://chat.stackoverflow.com',
+        host='chat.stackoverflow.com',
         slug='so')
     yield so
 
     mse = models.Server(
         meta_id=3,
         name="Meta Stack Exchange",
-        url='https://chat.meta.stackexchange.com',
+        host='chat.meta.stackexchange.com',
         slug='mse')
     yield mse
 

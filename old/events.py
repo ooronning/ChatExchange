@@ -204,9 +204,6 @@ class FileAdded(Event):
 class MessageFlaggedForModerator(Event):
     type_id = 12
 
-# backwards-compatiblity alias
-ModeratorFlag = MessageFlaggedForModerator
-
 
 @register_type
 class UserSettingsChanged(Event):
@@ -221,9 +218,6 @@ class GlobalNotification(Event):
 @register_type
 class AccessLevelChanged(Event):
     type_id = 15
-
-# backwards-compatiblity alias
-AccountLevelChanged = AccessLevelChanged
 
 
 @register_type

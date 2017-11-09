@@ -140,32 +140,32 @@ Here's most of the API:
             - .content_markdown: str # usually None because we don't know it
     - .client # Extended models with a reference to the client and lots of sugar
         - .Server extends ..models.Server
-            - async .user(id) -> .User()
-            - async .room(id) -> .Room()
-            - async .message(id) -> .Message()
-            - async .rooms() # all rooms from most-recently-active to least
-            - async .me() -> User() | None
-            - async .favorite_rooms()
+            - async .user(id, **cache_opts) -> .User()
+            - async .room(id, **cache_opts) -> .Room()
+            - async .message(id, **cache_opts) -> .Message()
+            - async .rooms(**cache_opts) # all rooms from most-recently-active to least
+            - async .me(**cache_opts) -> User() | None
+            - async .me_replies(**cache_opts)
+            - async .favorite_rooms(**cache_opts)
+            - async .search(q, owner_id, room_id)
         - .User extends ..models.User
             - .server -> .Server
-            - async .messages(from=EPOCH)
-            - infinite async .new_messages(to=SUNSET)
-            - infinite async .all_messages(from=EPOCH, to=SUNSET)
+            - async .messages(from=EPOCH, **cache_opts)
         - .Room extends ..models.Room
             - .server -> .Server
             - async .send(content_markdown)
             - async .ping(user, content_markdown)
-            - async .messages(from=EPOCH)
+            - async .messages(from=EPOCH, **cache_opts)
             - infinite async .new_message(to=SUNSET)
-            - infinite async .all_messages(from=EPOCH, to=SUNSET)
+            - infinite async .all_messages(from=EPOCH, to=SUNSET, **cache_opts)
         - .Message extends ..models.Message
             - .owner -> .User
             - .room -> .Room
             - async .reply(content_markdown) -> Message
             - async .edit(content_markdown) -> None
-            - async .replies(from=EPOCH)
+            - async .replies(from=EPOCH, **cache_opts)
             - infinite async .new_replies(to=SUNSET)
-            - infinite async .all_replies(from=EPOCH, to=SUNSET)
+            - infinite async .all_replies(from=EPOCH, to=SUNSET, **cache_opts)
     - .async # generic async utils, don't really belong, but might be useful
 ```
 
