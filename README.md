@@ -100,7 +100,7 @@ Here's most of the API:
 
 ```
 - chatexchange
-    - .Client(db_path='sqlite:///:memory:', auth=None)
+    - .AsyncClient(db_path='sqlite:///:memory:', auth=None)
         - .server(slug) -> .client.Server
         - .se -> .client.Server
         - .so -> .client.Server
@@ -110,57 +110,63 @@ Here's most of the API:
         - some caching settings too
     - .models # SQLAlchmeny models for the data 
         - .Base(**attrs) extends SQLAlchemy ORM Declarative Base
-            .__repr__
-            .set(**attrs) -> self
-            .meta_id: int
-            .meta_created: DateTime
-            .meta_updated: DateTime
-            .meta_deleted: DateTime
-            .deleted: boolean
-            .meta_slug: str
+            - .__repr__
+            - .set(**attrs) -> self
+            - .meta_id: int
+            - .meta_created: DateTime
+            - .meta_updated: DateTime
+            - .meta_deleted: DateTime
+            - .deleted: boolean
+            - .meta_slug: str
             @classmethod .meta_id_from_meta_slug(meta_slug) -> int
         - .Server extends .Base
-            .url: str
-            .slug: str
-            .name: strstr
+            - .url: str
+            - .slug: str
+            - .name: strstr
         - .User extends .Base
-            .server_meta_id: int
-            .id: int
-            .name: str
+            - .server_meta_id: int
+            - .id: int
+            - .name: str
         - .Room extends .Base
-            .server_meta_id: int
-            .id: int
-            .name: str
+            - .server_meta_id: int
+            - .id: int
+            - .name: str
         - .Message extends .Base
-            .owner_meta_id: int
-            .room_meta_id: int
-            .id: int
-            .content_html: str
-            .content_text: str # derived from the HTML
-            .content_markdown: str # usually None because we don't know it
+            - .owner_meta_id: int
+            - .room_meta_id: int
+            - .id: int
+            - .content_html: str
+            - .content_text: str # derived from the HTML
+            - .content_markdown: str # usually None because we don't know it
     - .client # Extended models with a reference to the client and lots of sugar
         - .Server extends ..models.Server
-            .me() -> User() | None
-            .user(id) -> .User()
-            .room(id) -> .Room()
-            .message(id) -> .Message()
-            .rooms() -> .Room()[] # all rooms from most-recently-active to least
+            - async .user(id) -> .User()
+            - async .room(id) -> .Room()
+            - async .message(id) -> .Message()
+            - async .rooms() # all rooms from most-recently-active to least
+            - async .me() -> User() | None
+            - async .favorite_rooms()
         - .User extends ..models.User
-            .server -> .Server
+            - .server -> .Server
+            - async .messages(from=EPOCH)
+            - infinite async .new_messages(to=SUNSET)
+            - infinite async .all_messages(from=EPOCH, to=SUNSET)
         - .Room extends ..models.Room
-            .server -> .Server
-            .send(content_markdown) -> asnyc???
-            .ping(user, content_markdown) -> async???
-            .messages(from=-Infinity, to=+Infinity) ->
-            .old_messages(limit=Infinity, from=-Infinity) -> async???
-            .new_message(limit=Infinity, to=+Infinity) -> async???
+            - .server -> .Server
+            - async .send(content_markdown)
+            - async .ping(user, content_markdown)
+            - async .messages(from=EPOCH)
+            - infinite async .new_message(to=SUNSET)
+            - infinite async .all_messages(from=EPOCH, to=SUNSET)
         - .Message extends ..models.Message
-            .owner -> .User
-            .room -> .Room
-            .reply(content_markdown) -> asnyc???
-            .replies() # yikes! requires fetching all following messages to check
-            .old_replies(???)
-            .new_replies(???)
+            - .owner -> .User
+            - .room -> .Room
+            - async .reply(content_markdown) -> Message
+            - async .edit(content_markdown) -> None
+            - async .replies(from=EPOCH)
+            - infinite async .new_replies(to=SUNSET)
+            - infinite async .all_replies(from=EPOCH, to=SUNSET)
+    - .async # generic async utils, don't really belong, but might be useful
 ```
 
 ### Internal (Do Not Use)

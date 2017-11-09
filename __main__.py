@@ -5,7 +5,6 @@ import os
 import time
 
 import coloredlogs
-import requests
 
 from chatexchange.client import Client
 
@@ -23,12 +22,11 @@ def main():
     logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
     logging.getLogger('requests').setLevel(logging.DEBUG)
 
-    client = Client('sqlite:///./data.so')
+    client = Client('sqlite:///./.ChatExchange.sqlite.so', auth=(email, password))
 
-    sandbox = client.se().room(1)
-    charcoal_hq = client.se().room(11540)
-
-    print("was given", charcoal_hq)
+    sand_box = client.se.room(1)
+    trash_can = client.se.room(1701)
+    char_coal = client.se.room(11540)
 
 
 if __name__ == '__main__':

@@ -3,7 +3,6 @@ from contextlib import contextmanager
 import logging
 import random
 
-import requests
 import sqlalchemy.orm
 
 from . import models, _parser, _seed
