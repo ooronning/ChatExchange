@@ -55,7 +55,7 @@ chatexchange r/B6 -s "hello world"
 The root of the interface is your `Client`, either `BlockingClient`:
 
 ```
-chat = chatexchange.BlockingClient(auth=('em@ai.l', 'passw0rd'))
+chat = chatexchange.BlockingClient(auth=('em@i.l', 'p4ssW0rd'))
 sandbox = chat.se.room(room_id=1)
 hello = sandbox.send("hello, %s 😶" % (room.name))
 for i, reply in enumerate(hello.replies()):
@@ -74,7 +74,7 @@ goodbye = sandbox.send("see y'all later!")
 or `AsyncClient`:
 
 ```
-chat = chatexchange.AsyncClient(auth=('em@ai.l', 'passw0rd'))
+chat = chatexchange.AsyncClient(auth=('em@i.l', 'p4ssW0rd'))
 sandbox = await chat.se.room(room_id=1)
 hello = await sandbox.send("hello, %s 😶" % (room.name))
 async for i, reply in chatexchange.async.enumerate(hello.replies()):
