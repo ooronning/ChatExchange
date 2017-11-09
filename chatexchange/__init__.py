@@ -1,3 +1,3 @@
 from . import models, client
-from .client import Client
+from .client import AsyncClient
 from ._constants import *

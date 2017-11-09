@@ -7,7 +7,8 @@ import time
 
 import coloredlogs
 
-from chatexchange.client import Client
+import chatexchange
+from chatexchange.client import AsyncClient
 
 
 
@@ -23,10 +24,11 @@ async def main():
     logger.setLevel(logging.DEBUG)
     logging.getLogger('sqlalchemy').setLevel(logging.WARN)
     logging.getLogger('chatexchange').setLevel(logging.DEBUG)
-    logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
     logging.getLogger('aiohttp.client').setLevel(logging.DEBUG)
 
-    with Client('sqlite:///./.ChatExchange.sqlite.so', auth=(email, password)) as chat:
+    with AsyncClient('sqlite:///./.ChatExchange.sqlite.so', auth=(email, password)) as chat:
+        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO) # enable here to skip logging seed data
+
         sand_box_request = chat.se.room(1)
         char_coal_request = chat.se.room(11540)
 

@@ -22,12 +22,11 @@ class _HttpClientSession(aiohttp.ClientSession):
 
     def _request(self, method, url, **kwargs):
         # see https://stackoverflow.com/a/45590516/1114
-    
         logger.debug('%s %r', method, url)
         return super()._request(method, url, **kwargs)
 
 
-class Client(object):
+class AsyncClient(object):
     # Defaults used to control caching:
     max_age_now     = -INFINITY
     max_age_current = 60                # one minute until a datum is no longer "current"
@@ -114,8 +113,8 @@ class Server(models.Server):
     async def room(self,
              room_id,
              offline=False,
-             desired_max_age=Client.max_age_fresh,
-             required_max_age=Client.max_age_dead):
+             desired_max_age=AsyncClient.max_age_fresh,
+             required_max_age=AsyncClient.max_age_dead):
         with self._client.sql_session() as sql:
             for existing in sql.query(Room).filter(
                     (Room.server_meta_id == self.meta_id) &
