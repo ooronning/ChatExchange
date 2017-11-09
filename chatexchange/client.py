@@ -63,11 +63,23 @@ class Server(models.Server):
                 else:
                     logger.debug("But it's not fresh... updating!")
                     room._mark_updated()
-            else:
+
+            try:
+                response = self._client._web_session.get('%s/transcript/%s/0-24' % (self.url, room_id))
+                transcript = _parser.TranscriptPage(response)
+            except Exception as ex:
+                if room and room.meta_update_age < self._client.max_age_dead:
+                    logger.error(ex)
+                    logger.warn("Using stale data due to error fetching new data.")
+                    sql.rollback()
+                    sql.refresh(room)
+                    return room
+                else:
+                    raise
+
+            if not room:
                 room = Room(server_meta_id=self.meta_id)
 
-            response = self._client._web_session.get('%s/transcript/%s/0-24' % (self.url, room_id))
-            transcript = _parser.TranscriptPage(response)
             room.room_id = transcript.room_id
             room.name = transcript.room_name
 
