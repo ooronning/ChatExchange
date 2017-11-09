@@ -19,7 +19,7 @@ class Base(object):
 
     meta_id = Column(Integer, primary_key=True)
     meta_created = Column(DateTime, default=datetime.datetime.now)
-    meta_updated = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    meta_updated = Column(DateTime, default=datetime.datetime.now)
     meta_deleted = Column(DateTime, default=None)
 
     __init__ = _obj_dict.update

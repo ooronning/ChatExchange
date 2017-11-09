@@ -43,7 +43,10 @@ class Message(models.Message):
 class Server(models.Server):
     _client = None
 
-    def room(self, room_id: int) -> Room:
+    def room(self,
+             room_id: int,
+             desired_max_age: int=Client.max_age_fresh,
+             required_max_age: int=Client.max_age_dead) -> Room:
         with self._client.sql_session() as sql:
             for existing in sql.query(Room).filter(
                     (Room.server_meta_id == self.meta_id) &
@@ -57,18 +60,17 @@ class Server(models.Server):
                 room = None
             
             if room:
-                if room.meta_update_age <= self._client.max_age_fresh:
+                if room.meta_update_age <= desired_max_age:
                     logger.debug("It's fresh, returning!")
                     return room
                 else:
                     logger.debug("But it's not fresh... updating!")
-                    room._mark_updated()
 
             try:
                 response = self._client._web_session.get('%s/transcript/%s/0-24' % (self.url, room_id))
                 transcript = _parser.TranscriptPage(response)
             except Exception as ex:
-                if room and room.meta_update_age < self._client.max_age_dead:
+                if room and room.meta_update_age <= required_max_age:
                     logger.error(ex)
                     logger.warn("Using stale data due to error fetching new data.")
                     sql.rollback()
@@ -82,6 +84,7 @@ class Server(models.Server):
 
             room.room_id = transcript.room_id
             room.name = transcript.room_name
+            room._mark_updated()
 
             room = sql.merge(room)
 
@@ -90,14 +93,17 @@ class Server(models.Server):
     def rooms(self):
         # TODO: check database first
         response = self._client._web_session.get('%s/rooms?tab=all&sort=active&nohide=true' % (self.url))
+        raise NotImplementedError()
         
     def user(self, user_id: int) -> User:
         # TODO: check database first
         response = self._client._web_session.get('%s/users/%s' % (self.url, user_id))
+        raise NotImplementedError()
 
     def message(self, message_id: int) -> Message:
         # TODO: check database first
         response = self._client._web_session.get('%s/transcript/message/%s/0-24' % (self.url, message_id))
+        raise NotImplementedError()
 
 
 class Client(object):

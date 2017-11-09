@@ -19,7 +19,9 @@ OAuth authentication are not supported.
 
 ## Command-Line Interface
 
-This hasn't been implemented, but I'd like to support things like this:
+This hasn't been implemented, but I'd like to support things like this.
+
+### Examples
 
 Import (or update) the full history of a chatroom to the database.
 Records updated within the last 3600 seconds will be considered up-to-date.
@@ -117,6 +119,20 @@ If a local result is available that has been updated within the desired number
 of seconds, it will be returned immediately. If not, we'll try to request a remote
 result. If that fails, but we have a local result updated within the required
 number of seconds, return that and log a warning, else raise an error.
+
+### Examples
+
+```
+chat = chatexchange.Client()
+
+me = chat.se().me()
+sandbox = chat.se().room(1)
+
+hello = sandbox.send("hello from %s!" % (me.name))
+
+for message in hello.replies():
+    print(message.name, message.content_text)
+```
 
 ### Internal (Do Not Use)
 
