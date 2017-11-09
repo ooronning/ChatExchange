@@ -14,4 +14,5 @@ def updated(o: object, **attrs):
 
 
 def repr(o: object) -> str:
-    return type(o).__qualname__ + pprintpp.pformat(o.__dict__)
+    return '%s.%s %s' % (
+        type(o).__module__, type(o).__qualname__, pprintpp.pformat(o.__dict__))

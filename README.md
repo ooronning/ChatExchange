@@ -53,12 +53,13 @@ chatexchange r/B6 -s "hello world"
 ```
 - chatexchange
     - .Client(db_path='sqlite:///:memory:', credentials=None) # Start here.
-        - .get_server(slug) -> .client.Server
+        - .server(slug) -> .client.Server
         - .se() -> .client.Server
         - .so() -> .client.Server
         - .mse() -> .client.Server
         - .sql_engine -> SQLAlchemy Engine
         - .sql_session() -> SQLAlchemy Session Bound to Engine
+        - some caching settings too
     - .models # SQLAlchmeny models for the data 
         - .Base(**attrs) extends SQLAlchemy ORM Declarative Base
             .__repr__
@@ -91,9 +92,10 @@ chatexchange r/B6 -s "hello world"
             .content_markdown: str # usually None because we don't know it
     - .client # Extended models with a reference to the client and lots of sugar
         - .Server extends ..models.Server
-            .get_user(id) -> .User()
-            .get_room(id) -> .Room()
-            .get_message(id) -> .Message()
+            .user(id) -> .User()
+            .room(id) -> .Room()
+            .message(id) -> .Message()
+            .rooms() -> .Room()[] # all rooms from most-recently-active to least
         - .User extends ..models.User
             @property .server -> .Server
         - .Room extends ..models.Room
@@ -109,6 +111,12 @@ chatexchange r/B6 -s "hello world"
             .reply(content_markdown) -> asnyc???
             .replies() # yikes! requires fetching all following messages to check
 ```
+
+Lots of methods will take `desired_max_age=` and `required_max_age=` parameters.
+If a local result is available that has been updated within the desired number
+of seconds, it will be returned immediately. If not, we'll try to request a remote
+result. If that fails, but we have a local result updated within the required
+number of seconds, return that and log a warning, else raise an error.
 
 ### Internal (Do Not Use)
 
