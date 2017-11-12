@@ -6,7 +6,7 @@ from . import _utils
 logger = logging.getLogger(__name__)
 
 
-class Message(object):
+class Message:
     def __init__(self, id, client):
         self.id = id
         self._logger = logger.getChild('Message')

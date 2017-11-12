@@ -10,7 +10,7 @@ from . import _utils, events, messages
 logger = logging.getLogger(__name__)
 
 
-class Room(object):
+class Room:
     def __init__(self, id, client):
         self.id = id
         self._logger = logger.getChild('Room')
@@ -150,7 +150,7 @@ class Room(object):
             type(self).__module__, type(self).__name__, self.id, self._client.host)
 
 
-class FilteredEventIterator(object):
+class FilteredEventIterator:
     def __init__(self, room, types):
         self.types = types
         self._queue = queue.Queue()
@@ -173,7 +173,7 @@ class FilteredEventIterator(object):
             self._queue.put(event)
 
 
-class MessageIterator(object):
+class MessageIterator:
     def __init__(self, room):
         self._event_iter = FilteredEventIterator(room, events.MessagePosted)
 

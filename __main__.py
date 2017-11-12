@@ -27,12 +27,16 @@ async def main():
     logging.getLogger('aiohttp.client').setLevel(logging.DEBUG)
 
     with AsyncClient('sqlite:///./.ChatExchange.sqlite.so', auth=(email, password)) as chat:
-        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO) # enable here to skip logging seed data
+        # logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO) # enable here to skip logging seed data
 
         sand_box, char_coal = await asyncio.gather(chat.se.room(1), chat.se.room(11540))
 
         logger.debug("sand_box == %r", sand_box)
         logger.debug("char_coal == %r", char_coal)
+
+        async for message in sand_box.old_messages():
+            logger.info("%s: %s" % (message.owner.name, message.content_text))
+            time.sleep(0.1)
 
 
 if __name__ == '__main__':

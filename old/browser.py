@@ -608,7 +608,7 @@
             s.on_websocket_closed = self.on_websocket_closed
 
 
-class RoomSocketWatcher(object):
+class RoomSocketWatcher:
     def __init__(self, browser, room_id, on_activity):
         self.logger = logger.getChild('RoomSocketWatcher')
         self.browser = browser
@@ -657,7 +657,7 @@ class RoomSocketWatcher(object):
                 self.on_activity(json.loads(a))
 
 
-class RoomPollingWatcher(object):
+class RoomPollingWatcher:
     def __init__(self, browser, room_id, on_activity, interval):
         self.logger = logger.getChild('RoomPollingWatcher')
         self.browser = browser

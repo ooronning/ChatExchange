@@ -26,7 +26,7 @@ def parse_age_ago(text):
     return timedelta(seconds=number * suffixes[char])
 
 
-class LazyFrom(object):
+class LazyFrom:
     """
     A descriptor used when multiple lazy attributes depend on a common
     source of data.

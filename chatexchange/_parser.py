@@ -1,9 +1,8 @@
 """
 Classes for parsing different HTML pages into structured data.
-
-This performs minimal interpretation, leaving that to the user.
 """
 
+import datetime
 import re
 from html import escape as escape_html
 
@@ -29,7 +28,7 @@ def _dom_text_content(dom):
     return lxml.html.tostring(dom, encoding=str, method='text')
 
 
-class _ParsedDOM(object):
+class _ParsedDOM:
     """
     Base class for a parsed document/document fragment.
     """
@@ -62,7 +61,7 @@ class _ParsedDOM(object):
 
 
 class TranscriptPage(_ParsedDOM):
-    class Message(object):
+    class Message:
         def __init__(self, **attrs):
             self.id = None
             self.content_html = None
@@ -84,21 +83,35 @@ class TranscriptPage(_ParsedDOM):
         self.room_id = int(room_name_link.get('href').split('/')[2])
         self.room_name = room_name_link.text
 
+        self.first_day = None
+        self.previous_day = None
+        self.next_day = None
+        self.last_day = None
+
         self.first_day_url = None
         self.previous_day_url = None
         self.next_day_url = None
         self.last_day_url = None
-        self.messages = []
+
+        def date_from_url(url):
+            _, _, _, y, m, d, *_ = url.split('/')
+            return datetime.date(year=int(y), month=int(m), day=int(d))
 
         for other_day_el in self._dom.cssselect('#main > a[href^="/transcript"]'):
             if 'first day' in other_day_el.text:
                 self.first_day_url = other_day_el.get('href')
+                self.first_day = date_from_url(self.first_day_url)
             elif 'previous day' in other_day_el.text:
                 self.previous_day_url = other_day_el.get('href')
+                self.previous_day = date_from_url(self.previous_day_url)
             elif 'next day' in other_day_el.text:
                 self.next_day_url = other_day_el.get('href')
+                self.next_day = date_from_url(self.next_day_url)
             elif 'last day' in other_day_el.text:
                 self.last_day_url = other_day_el.get('href')
+                self.last_day = date_from_url(self.last_day_url)
+
+        self.messages = []
 
         for monologue_el in self._dom.cssselect('.monologue'):
             user_link ,= monologue_el.cssselect('.signature .username a')

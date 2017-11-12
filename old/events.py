@@ -30,7 +30,7 @@ def register_type(event_type):
     return event_type
 
 
-class Event(object):
+class Event:
     def __init__(self, data, client):
         self.logger = logger.getChild(type(self).__name__)
 

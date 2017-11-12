@@ -7,7 +7,7 @@ from .models import user
 logger = logging.getLogger(__name__)
 
 
-class User(object):
+class User:
     def __init__(self, id, client):
         self.id = id
         self._logger = logger.getChild('User')

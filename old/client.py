@@ -17,7 +17,7 @@ TOO_FAST_RE = r"You can perform this action again in (\d+) seconds"
 logger = logging.getLogger(__name__)
 
 
-class Client(object):
+class Client:
     """
     A high-level interface for interacting with Stack Exchange chat.
 
