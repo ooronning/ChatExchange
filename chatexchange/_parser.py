@@ -49,12 +49,6 @@ class _ParsedDOM:
             # via https://github.com/django-haystack/pysolr/pull/88/files
             sanitized_html = re.sub(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]', '�', html)
             self._dom = self._parser.parse(sanitized_html).getroot()
-
-    @staticmethod
-    def _user_id_and_name_from_link(link_el):
-        user_name = link_el.text
-        user_id = int(link_el.get('href').split('/')[2])
-        return user_id, user_name
     
     __repr__ = _obj_dict.repr
         
@@ -79,7 +73,7 @@ class TranscriptPage(_ParsedDOM):
     def __init__(self, page):
         super().__init__(page)
 
-        room_name_link ,= self._dom.cssselect('.room-name a')
+        room_name_link ,= self._dom.cssselect('#info .room-name a')
         self.room_id = int(room_name_link.get('href').split('/')[2])
         self.room_name = room_name_link.text
 
@@ -114,8 +108,15 @@ class TranscriptPage(_ParsedDOM):
         self.messages = []
 
         for monologue_el in self._dom.cssselect('.monologue'):
-            user_link ,= monologue_el.cssselect('.signature .username a')
-            user_id, user_name = self._user_id_and_name_from_link(user_link)
+            user_signature ,= monologue_el.cssselect('.signature .username')
+            user_name = _dom_text_content(user_signature).strip()
+            
+            user_links = user_signature.cssselect('a')    
+            if user_links:
+                user_link ,= user_links
+                user_id = int(user_link.get('href').split('/')[2])
+            else:
+                user_id = None
 
             for message_el in monologue_el.cssselect('.message'):
                 message = TranscriptPage.Message()

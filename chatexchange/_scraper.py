@@ -67,14 +67,18 @@ class TranscriptPage(_Scraper):
 
                 owner = self.users.get(m.owner_user_id)
                 if not owner:
-                    owner = self.server._get_or_create_user(sql, m.owner_user_id)
-                    if not owner.user_name:
-                        owner.mark_updated()
-                        # XXX: this is the name as of the time of the message, so it should really
-                        # be treated as an update from that time, except that we don't have message
-                        # timestamps implemented yet, so we'll just use the first name we see.
-                        owner.name = m.owner_user_name
+                    if m.owner_user_id:
+                        owner = self.server._get_or_create_user(sql, m.owner_user_id)
+                        if not owner.name:
+                            owner.mark_updated()
+                            # XXX: this is the name as of the time of the message, so it should really
+                            # be treated as an update from that time, except that we don't have message
+                            # timestamps implemented yet, so we'll just use the first name we see.
+                            owner.name = m.owner_user_name
+                    else:
+                        # deleted owner, default to Community.
+                        owner = self.server._get_or_create_user(sql, -1)
                     self.users[m.owner_user_id] = owner
-                message.owner_id = m.owner_user_id
+                message.owner_id = owner.user_id
         
         return self

@@ -1,6 +1,7 @@
 import asyncio
 from contextlib import contextmanager
 import logging
+import time
 import random
 
 import aiohttp
@@ -240,15 +241,11 @@ class Room(models.Room):
 
             previous_day = transcript.data.previous_day or transcript.date.first_day
             if previous_day:
+                time.sleep(1.0) # TODO better rate limiting
                 transcript = await _scraper.TranscriptPage.scrape(
                     self._client_server, room_id=self.room_id, date=previous_day)
             else:
                 break
-
-
-    @property
-    def owner(self):
-        return self._client_server.user(self.owner_id)
 
     def send(self, content_markdown):
         pass
@@ -264,7 +261,10 @@ class Message(models.Message):
 
     @property
     def owner(self):
-        return self._client_server.user(self.owner_id)
+        if self.owner_id:
+            return self._client_server.user(self.owner_id)
+        else:
+            return None
 
     @property
     def room(self):
