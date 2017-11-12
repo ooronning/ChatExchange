@@ -26,13 +26,65 @@ class _HttpClientSession(aiohttp.ClientSession):
         return super()._request(method, url, **kwargs)
 
 
+class _SQLSession(sqlalchemy.orm.session.Session):
+    def get_or_create_server(self, server_slug):
+        server = self.query(Server).filter(models.Server.slug == slug_or_host).one_or_none()
+        if not server:
+            server = Server(server_slug=server_slug)
+            self.add(server)
+            self.flush()
+        assert server.meta_id
+        return server
+
+    def get_or_create_user(self, server_meta_id, user_id):
+        user = self.query(User).filter(
+            (models.User.server_meta_id == server_meta_id) &
+            (models.User.user_id == user_id)
+        ).one_or_none()
+        if not user:
+            user = User(server_meta_id=server_meta_id, user_id=user_id)
+            self.add(user)
+            self.flush()
+        assert user.meta_id
+        return user
+
+    def get_or_create_room(self, server_meta_id, room_id):
+        room = self.query(Room).filter(
+            (models.Room.server_meta_id == server_meta_id) &
+            (models.Room.room_id == room_id)
+        ).one_or_none()
+        if not room:
+            room = Room(server_meta_id=server_meta_id, room_id=room_id)
+            self.add(room)
+            self.flush()
+        assert room.meta_id
+        return room
+
+    def get_or_create_message(self, room_meta_id, message_id):
+        message = self.query(Message).filter(
+            (models.Message.room_meta_id == room_meta_id) &
+            (models.Message.message_id == message_id)
+        ).one_or_none()
+        if not message:
+            message = Message(room_meta_id=room_meta_id, message_id=message_id)
+            self.add(message)
+            self.flush()
+        assert message.meta_id
+        return message
+
+
 class AsyncClient(object):
     # Defaults used to control caching:
     max_age_now     = -INFINITY
     max_age_current = 60                # one minute until a datum is no longer "current"
     max_age_fresh   = 60 * 60 * 4       # four hours until a datum is no longer "fresh"
     max_age_alive   = 60 * 60 * 24 * 64 # two months until a datum is no longer "alive"
-    max_age_dead    = -INFINITY
+    max_age_dead    = +INFINITY
+
+    # These should be function options but we'll just set them here for now:
+    desired_max_age = max_age_fresh
+    required_max_age = max_age_dead
+    offline = False
 
     def __init__(self, db_path='sqlite:///:memory:', auth=None):
         self._web_session = _HttpClientSession()
@@ -40,9 +92,8 @@ class AsyncClient(object):
         self.sql_engine = sqlalchemy.create_engine(db_path)
         self._sql_sessionmaker = sqlalchemy.orm.sessionmaker(
             bind=self.sql_engine,
-            expire_on_commit=False)
-
-        self._event_loop = asyncio.get_event_loop()
+            expire_on_commit=False,
+            class_=_SQLSession)
 
         models.Base.metadata.create_all(self.sql_engine)
 
@@ -71,7 +122,8 @@ class AsyncClient(object):
 
     @contextmanager
     def sql_session(self):
-        if self._closed: raise Exception('already closed')
+        if self._closed:
+            raise Exception('already closed')
 
         session = self._sql_sessionmaker()
         try:
@@ -110,11 +162,57 @@ class Server(models.Server):
     def me(self):
         raise NotImplementedError()
 
-    async def room(self,
-             room_id,
-             offline=False,
-             desired_max_age=AsyncClient.max_age_fresh,
-             required_max_age=AsyncClient.max_age_dead):
+    async def _load_transcript_page(self, room_id=None, message_id=None, date=None):
+        if message_id:
+            if room_id:
+                raise AttributeError("room_id not supported with message_id")
+            if date:
+                raise AttributeError("date not supported with message_id")
+        elif not room_id:
+            raise AttributeError("room_id xor message_id required")
+
+        url = 'https://%s/transcript' % (self.host)
+
+        if message_id:
+            url += '/message/%s' % (message_id)
+        else:
+            url += '/%s' % (room_id)
+            if date:
+                url += '/%s/%s/%s' % (date.year, date.month, date.day)
+            url += '/0-24'
+
+        async with self._client._web_session.get(url) as response:
+            html = await response.text()
+
+        transcript = _parser.TranscriptPage(html)
+
+        with self._client.sql_session() as sql:
+            room = sql.get_or_create_room(self.meta_id, transcript.room_id)
+            room.name = transcript.room_name
+            room.mark_updated()
+
+        return transcript
+
+    async def room(self, room_id):
+        with self._client.sql_session() as sql:
+            room = sql.get_or_create_room(self.meta_id, room_id)
+
+        if room.meta_update_age < self._client.desired_max_age:
+            return room
+
+        if not self._client.offline:
+            await self._load_transcript_page(room_id=room_id)
+
+            with self._client.sql_session() as sql:
+                room = sql.get_or_create_room(self.meta_id, room_id)
+
+        if room.meta_update_age <= self._client.required_max_age:
+            return room
+        
+        logger.warn("%s failed to load room %s, %s > %s", self, room_id, room.meta_update_age, self._client.required_max_age)
+        return None
+
+    def _____():
         with self._client.sql_session() as sql:
             for existing in sql.query(Room).filter(
                     (Room.server_meta_id == self.meta_id) &
@@ -136,9 +234,7 @@ class Server(models.Server):
 
             try:
                 if offline: raise Exception("offline=True")
-                async with self._client._web_session.get('https://%s/transcript/%s/0-24' % (self.host, room_id)) as response:
-                    html = await response.text()
-                transcript = _parser.TranscriptPage(html)
+                
             except Exception as ex:
                 if room and room.meta_update_age <= required_max_age:
                     logger.error(ex)
@@ -152,7 +248,7 @@ class Server(models.Server):
 
             room.room_id = transcript.room_id
             room.name = transcript.room_name
-            room._mark_updated()
+            room.mark_updated()
 
             room = sql.merge(room)
 
@@ -181,6 +277,14 @@ class User(models.User):
 
 class Room(models.Room):
     _client_server = None
+
+    def _message(self, message_id):
+        with self._client.sql_session() as sql:
+            for message in sql.query(Message).filter(
+                    (Message.room_meta_id == self.meta_id) &
+                    (Message.message_id == message_id)):
+                return message
+            return Message(room_meta_id=self.meta_id, message_id=message_id)
 
     @property
     def owner(self):

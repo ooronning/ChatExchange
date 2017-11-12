@@ -7,6 +7,7 @@ import sqlalchemy
 from sqlalchemy import Column, String, Integer, Index, ForeignKey, Boolean, DateTime, UniqueConstraint
 import sqlalchemy.ext.declarative
 
+from ._constants import *
 from . import _obj_dict
 
 
@@ -19,7 +20,7 @@ class Base(object):
 
     meta_id = Column(Integer, primary_key=True)
     meta_created = Column(DateTime, default=datetime.datetime.now)
-    meta_updated = Column(DateTime, default=datetime.datetime.now)
+    meta_updated = Column(DateTime, default=EPOCH)
     meta_deleted = Column(DateTime, default=None)
 
     __init__ = _obj_dict.update
@@ -27,10 +28,10 @@ class Base(object):
     
     __repr__ = _obj_dict.repr
 
-    def _mark_updated(self):
+    def mark_updated(self):
         self.meta_updated = datetime.datetime.now()
 
-    def _mark_deleted(self):
+    def mark_deleted(self):
         if self.meta_deleted is None:
             self.meta_deleted = datetime.datetime.now()
 
