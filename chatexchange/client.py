@@ -28,15 +28,18 @@ class _HttpClientSession(aiohttp.ClientSession):
 
 class _SQLSession(sqlalchemy.orm.session.Session):
     def get_or_create_server(self, server_slug):
-        server = self.query(Server).filter(models.Server.slug == slug_or_host).one_or_none()
+        assert server_slug
+        server = self.query(Server).filter(models.Server.slug == server_slug).one_or_none()
         if not server:
             server = Server(server_slug=server_slug)
             self.add(server)
             self.flush()
-        assert server.meta_id
+            assert server.meta_id
         return server
 
     def get_or_create_user(self, server_meta_id, user_id):
+        assert server_meta_id
+        assert user_id
         user = self.query(User).filter(
             (models.User.server_meta_id == server_meta_id) &
             (models.User.user_id == user_id)
@@ -45,10 +48,12 @@ class _SQLSession(sqlalchemy.orm.session.Session):
             user = User(server_meta_id=server_meta_id, user_id=user_id)
             self.add(user)
             self.flush()
-        assert user.meta_id
+            assert user.meta_id
         return user
 
     def get_or_create_room(self, server_meta_id, room_id):
+        assert server_meta_id
+        assert room_id
         room = self.query(Room).filter(
             (models.Room.server_meta_id == server_meta_id) &
             (models.Room.room_id == room_id)
@@ -57,19 +62,21 @@ class _SQLSession(sqlalchemy.orm.session.Session):
             room = Room(server_meta_id=server_meta_id, room_id=room_id)
             self.add(room)
             self.flush()
-        assert room.meta_id
+            assert room.meta_id
         return room
 
-    def get_or_create_message(self, room_meta_id, message_id):
+    def get_or_create_message(self, server_meta_id, message_id):
+        assert server_meta_id
+        assert message_id
         message = self.query(Message).filter(
-            (models.Message.room_meta_id == room_meta_id) &
+            (models.Message.server_meta_id == server_meta_id) &
             (models.Message.message_id == message_id)
         ).one_or_none()
         if not message:
-            message = Message(room_meta_id=room_meta_id, message_id=message_id)
+            message = Message(server_meta_id=server_meta_id, message_id=message_id)
             self.add(message)
             self.flush()
-        assert message.meta_id
+            assert message.meta_id
         return message
 
 
@@ -191,6 +198,25 @@ class Server(models.Server):
             room.name = transcript.room_name
             room.mark_updated()
 
+            for m in transcript.messages:
+                message = sql.get_or_create_message(self.meta_id, m.id)
+                message.content_html = m.content_html
+                message.content_text = m.content_text
+                message.room_id = transcript.room_id
+
+                if m.parent_message_id:
+                    parent = sql.get_or_create_message(self.meta_id, m.parent_message_id)
+                    message.parent_message_id = m.parent_message_id
+
+                owner = sql.get_or_create_user(self.meta_id, m.owner_user_id)
+                if not m.owner_user_name:
+                    # XXX: this is the name as of the time of the message, so it should really
+                    # be treated as an update from that time, except that we don't have message
+                    # timestamps implemented yet, so we'll just use the first name we see.
+                    owner.name = m.owner_user_name
+                    owner.mark_updated()
+                message.owner_id = m.owner_user_id
+
         return transcript
 
     async def room(self, room_id):
@@ -209,50 +235,27 @@ class Server(models.Server):
         if room.meta_update_age <= self._client.required_max_age:
             return room
         
-        logger.warn("%s failed to load room %s, %s > %s", self, room_id, room.meta_update_age, self._client.required_max_age)
+        logger.warning("%s failed to load room %s, %s > %s", self, room_id, room.meta_update_age, self._client.required_max_age)
         return None
 
-    def _____():
+    async def message(self, message_id):
         with self._client.sql_session() as sql:
-            for existing in sql.query(Room).filter(
-                    (Room.server_meta_id == self.meta_id) &
-                    (Room.room_id == room_id)):
+            message = sql.get_or_create_message(self.meta_id, message_id)
 
-                logger.debug("Found %s with age %s." % (existing, existing.meta_update_age))
+        if message.meta_update_age < self._client.desired_max_age:
+            return message
 
-                room = existing
-                break
-            else:
-                room = None
-            
-            if room:
-                if room.meta_update_age <= desired_max_age:
-                    logger.debug("It's fresh, returning!")
-                    return room
-                else:
-                    logger.debug("But it's not fresh... updating!")
+        if not self._client.offline:
+            await self._load_transcript_page(message_id=message_id)
 
-            try:
-                if offline: raise Exception("offline=True")
-                
-            except Exception as ex:
-                if room and room.meta_update_age <= required_max_age:
-                    logger.error(ex)
-                    logger.warn("Using stale data due to error fetching new data.")
-                    return room
-                else:
-                    raise
+            with self._client.sql_session() as sql:
+                message = sql.get_or_create_message(self.meta_id, message_id)
 
-            if not room:
-                room = Room(server_meta_id=self.meta_id)
-
-            room.room_id = transcript.room_id
-            room.name = transcript.room_name
-            room.mark_updated()
-
-            room = sql.merge(room)
-
-        return room
+        if message.meta_update_age <= self._client.required_max_age:
+            return message
+        
+        logger.warning("%s failed to load message %s, %s > %s", self, message_id, message.meta_update_age, self._client.required_max_age)
+        return None
     
     def rooms(self):
         # TODO: check database first
@@ -262,11 +265,6 @@ class Server(models.Server):
     def user(self, user_id):
         # TODO: check database first
         response = self._client._web_session.get('https://%s/users/%s' % (self.host, user_id))
-        raise NotImplementedError()
-
-    def message(self, message_id):
-        # TODO: check database first
-        response = self._client._web_session.get('https://%s/transcript/message/%s/0-24' % (self.host, message_id))
         raise NotImplementedError()
 
 
