@@ -121,6 +121,8 @@ class Message(Base):
 
     message_id = Column(Integer, nullable=False)
 
+    parent_message_id = Column(Integer, ForeignKey('Message.message_id'), nullable=True)
+
     content_html = Column(String)
     content_text = Column(String)
     content_markdown = Column(String)

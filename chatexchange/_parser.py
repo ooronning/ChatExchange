@@ -3,6 +3,7 @@ Classes for parsing different HTML pages into structured data.
 """
 
 import datetime
+import logging
 import re
 from html import escape as escape_html
 
@@ -12,6 +13,9 @@ from lxml.html import html5parser
 
 from . import _obj_dict
 
+
+
+logger = logging.getLogger(__name__)
 
 
 def _dom_outer_html(dom):
@@ -42,7 +46,6 @@ class _ParsedDOM:
         else:
             assert isinstance(dom, str)
             html = str(dom)
-            self.url = None
     
             # lxml only allows characters that are valid in XML, but the web is dark and full of terrors.
             # see https://stackoverflow.com/a/25920392/1114
@@ -76,6 +79,8 @@ class TranscriptPage(_ParsedDOM):
         room_name_link ,= self._dom.cssselect('#info .room-name a')
         self.room_id = int(room_name_link.get('href').split('/')[2])
         self.room_name = room_name_link.text
+
+        logger.debug("Parsing transcript for room %s %s.", self.room_id, self.room_name)
 
         self.first_day = None
         self.previous_day = None

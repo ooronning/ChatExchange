@@ -1,15 +1,52 @@
+import abc
+import logging
+
 from . import _parser, _obj_dict
 
 
 
+logger = logging.getLogger(__name__)
+
+
 class _Scraper:
     __repr__ = _obj_dict.repr
+    @classmethod
+    async def scrape(cls, server, **kwargs):
+        self = cls(server, **kwargs)
+        logger.info("Fetching %s...", self.url)
+        self.html = await self._fetch()
+        logger.debug("Importing data fetched from %s...", self.url)
+        self._load()
+        logger.info("...finished scraping %s.", self.url)
+        return self
+
+    def __init__(self, server, **kwargs):
+        self.server = server
+        self.url = 'https://%s/%s' % (server.host, self._make_path(**kwargs))
+
+    @abc.abstractmethod
+    def _make_path(self, **kwargs):
+        pass
+
+    async def _fetch(self):
+        async with self.server._client._web_session.get(self.url) as response:
+            logger.debug("...%s response from %s...", response.status, self.url)
+            html = await response.text()
+            logger.debug("...fully loaded")
+            return html
+
+    @abc.abstractmethod
+    def _load(self):
+        pass
 
 
 
 class TranscriptPage(_Scraper):
-    @classmethod
-    async def scrape(cls, server, room_id=None, message_id=None, date=None):
+    def _make_path(self, room_id=None, message_id=None, date=None):
+        target_room_id = room_id
+        target_message_id = message_id
+        target_date = date
+
         if message_id:
             if room_id:
                 raise AttributeError("room_id not supported with message_id")
@@ -18,30 +55,22 @@ class TranscriptPage(_Scraper):
         elif not room_id:
             raise AttributeError("room_id xor message_id required")
 
-        self = cls()
+        path = 'transcript'
 
-        self.server = server
-
-        self.target_room_id = room_id
-        self.target_message_id = message_id
-        self.target_date = date
-
-        self.url = 'https://%s/transcript' % (server.host)
-
-        if self.target_message_id:
-            self.url += '/message/%s' % (self.target_message_id)
+        if target_message_id:
+            path += '/message/%s' % (target_message_id)
         else:
-            self.url += '/%s' % (self.target_room_id)
-            if self.target_date:
-                self.url += '/%s/%s/%s' % (
-                    self.target_date.year, self.target_date.month, self.target_date.day)
-            self.url += '/0-24'
-
-        async with self.server._client._web_session.get(self.url) as response:
-            self.html = await response.text()
-
-        self.data = _parser.TranscriptPage(self.html)
+            path += '/%s' % (target_room_id)
+            if target_date:
+                path += '/%s/%s/%s' % (
+                    target_date.year, target_date.month, target_date.day)
+            path += '/0-24'
         
+        return path
+
+    def _load(self):
+        self.data = _parser.TranscriptPage(self.html)
+
         with self.server._client.sql_session() as sql:
             self.room = self.server._get_or_create_room(sql, self.data.room_id)
             self.room.mark_updated()
@@ -55,7 +84,8 @@ class TranscriptPage(_Scraper):
                 message.mark_updated()
                 message.content_html = m.content_html
                 message.content_text = m.content_text
-                message.room_id = self.data.room_id
+                message.room_meta_id = self.room.meta_id
+
                 self.messages[m.id] = message
 
                 if m.parent_message_id:
@@ -79,6 +109,6 @@ class TranscriptPage(_Scraper):
                         # deleted owner, default to Community.
                         owner = self.server._get_or_create_user(sql, -1)
                     self.users[m.owner_user_id] = owner
-                message.owner_id = owner.user_id
+                message.owner_meta_id = owner.meta_id
         
         return self

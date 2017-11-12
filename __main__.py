@@ -3,6 +3,7 @@ import datetime
 import getpass
 import logging
 import os
+import random
 import time
 
 import coloredlogs
@@ -27,7 +28,6 @@ async def main():
     logging.getLogger('aiohttp.client').setLevel(logging.DEBUG)
 
     with AsyncClient('sqlite:///./.ChatExchange.sqlite.so', auth=(email, password)) as chat:
-        
         sand_box, char_coal, py_thon, java_script = await asyncio.gather(
             chat.se.room(1), chat.se.room(11540), chat.so.room(6), chat.so.room(17))
 
@@ -37,16 +37,16 @@ async def main():
         logger.debug("sand_box == %r", sand_box)
 
         async for message in char_coal.old_messages():
-            logger.info("%s: %s" % (message.owner.name, message.content_text))
-
-        async for message in py_thon.old_messages():
-            logger.info("%s: %s" % (message.owner.name, message.content_text))
-
-        async for message in java_script.old_messages():
-            logger.info("%s: %s" % (message.owner.name, message.content_text))
+            pass
 
         async for message in sand_box.old_messages():
-            logger.info("%s: %s" % (message.owner.name, message.content_text))
+            pass
+
+        async for message in py_thon.old_messages():
+            pass
+
+        async for message in java_script.old_messages():
+            pass
 
 
 if __name__ == '__main__':

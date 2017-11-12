@@ -46,13 +46,18 @@ class AsyncClient:
     offline = False
 
     def __init__(self, db_path='sqlite:///:memory:', auth=None):
-        self._web_session = _HttpClientSession()
+        self._web_session = _HttpClientSession(
+            read_timeout=20,
+            raise_for_status=True)
 
         self.sql_engine = sqlalchemy.create_engine(db_path)
         self._sql_sessionmaker = sqlalchemy.orm.sessionmaker(
             bind=self.sql_engine,
             expire_on_commit=False,
             class_=_SQLSession)
+
+        if db_path.startswith('sqlite:'):
+            self._prepare_sqlite_hacks()
 
         models.Base.metadata.create_all(self.sql_engine)
 
@@ -64,7 +69,27 @@ class AsyncClient:
                 except sqlalchemy.exc.IntegrityError:
                     sql.rollback()
                     continue
-    
+
+    def _prepare_sqlite_hacks(self):
+        # via http://docs.sqlalchemy.org/en/latest/dialects/sqlite.html
+
+        @sqlalchemy.event.listens_for(self.sql_engine, 'connect')
+        def do_connect(dbapi_connection, connection_record):
+            # disable pysqlite's emitting of the BEGIN statement entirely.
+            # also stops it from emitting COMMIT before any DDL.
+            dbapi_connection.isolation_level = None
+
+            # enable foreign key constraint checking
+            # XXX: lol it already breaks us
+            # cursor = dbapi_connection.cursor()
+            # cursor.execute("PRAGMA foreign_keys=ON")
+            # cursor.close()
+
+        @sqlalchemy.event.listens_for(self.sql_engine, 'begin')
+        def do_begin(conn):
+            # emit our own BEGIN
+            conn.execute('BEGIN')
+
     _closed = False
     def close(self):
         if self._closed: raise Exception('already closed')
@@ -241,14 +266,14 @@ class Room(models.Room):
 
             previous_day = transcript.data.previous_day or transcript.date.first_day
             if previous_day:
-                time.sleep(1.0) # TODO better rate limiting
+                await asyncio.sleep(1) # TODO better rate limiting
                 transcript = await _scraper.TranscriptPage.scrape(
                     self._client_server, room_id=self.room_id, date=previous_day)
             else:
                 break
 
     def send(self, content_markdown):
-        pass
+        raise NotImplementedError()
 
 
 
