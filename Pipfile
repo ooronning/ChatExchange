@@ -9,8 +9,7 @@ name = "pypi"
 
 "beautifulsoup4" = ">=4.3.2"
 websocket-client = ">=0.13.0"
-sqlalchemy = "*"
-coloredlogs = "*"
+SQLAlchemy = "*"
 hashids = "*"
 "html5lib" = "*"
 cssselect = "*"
@@ -19,7 +18,7 @@ pip = "*"
 pprintpp = "*"
 aiohttp = "*"
 aiodns = "*"
-async-timeout = "*"
+async_timeout = "*"
 
 
 [dev-packages]

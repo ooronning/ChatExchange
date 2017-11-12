@@ -71,6 +71,8 @@ class TranscriptPage(_Scraper):
     def _load(self):
         self.data = _parser.TranscriptPage(self.html)
 
+        logger.debug("Inserting data into database.")
+
         with self.server._client.sql_session() as sql:
             self.room = self.server._get_or_create_room(sql, self.data.room_id)
             self.room.mark_updated()

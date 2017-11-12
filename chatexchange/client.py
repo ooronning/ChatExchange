@@ -264,9 +264,9 @@ class Room(models.Room):
                     key=lambda m: -m.message_id):
                 yield message
 
-            previous_day = transcript.data.previous_day or transcript.date.first_day
+            previous_day = transcript.data.previous_day or transcript.data.first_day
             if previous_day:
-                await asyncio.sleep(1) # TODO better rate limiting
+                await asyncio.sleep(0.25) # TODO better rate limiting
                 transcript = await _scraper.TranscriptPage.scrape(
                     self._client_server, room_id=self.room_id, date=previous_day)
             else:

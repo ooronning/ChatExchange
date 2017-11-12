@@ -12,7 +12,7 @@ from . import _obj_dict
 
 
 
-_key = 'adbbf3aa342bc82736d0ee71b2a0650e05b2edd21082e1291ae161777550ba0c71002b9ce3ad7aa19c8a4641223f8f4e82bab7ebbf5335d01046cdc5a462bdfe'
+_obfuscation_key = 'adbbf3aa342bc82736d0ee71b2a0650e05b2edd21082e1291ae161777550ba0c71002b9ce3ad7aa19c8a4641223f8f4e82bab7ebbf5335d01046cdc5a462bdfe'
 
 
 class Base:
@@ -47,7 +47,7 @@ class Base:
         I like to use these so that we have an identifier for these instances
         that is clearly not their official room/message IDs.
         """
-        salt = ''.join(chr(n) for n in hmac.new(_key, self.__tablename__, hashlib.sha512).digest())
+        salt = ''.join(chr(n) for n in hmac.new(_obfuscation_key, self.__tablename__, hashlib.sha512).digest())
         min_length = 4
         slugger = hashids.Hashids(salt=salt, min_length=min_length)
         meta_slug ,= slugger.encode(self.meta_id)
@@ -55,7 +55,7 @@ class Base:
 
     @classmethod
     def meta_id_from_meta_slug(cls, meta_slug):
-        salt = ''.join(chr(n) for n in hmac.new(_key, cls.__tablename__, hashlib.sha512).digest())
+        salt = ''.join(chr(n) for n in hmac.new(_obfuscation_key, cls.__tablename__, hashlib.sha512).digest())
         min_length = 4
         slugger = hashids.Hashids(salt=salt, min_length=min_length)
         meta_id, = slugger.decode(meta_slug)
@@ -90,6 +90,7 @@ class User(Base):
     last_message = Column(DateTime)
 
     __table_args__ = (
+        Index('ix_server_meta_id_user_id_name', server_meta_id, user_id, name),
         UniqueConstraint('server_meta_id', 'user_id'),
     )
 
@@ -108,6 +109,7 @@ class Room(Base):
     ACCESS_PUBLIC = 0b_00000011
 
     __table_args__ = (
+        Index('ix_server_meta_id_room_id_name', server_meta_id, room_id, name),
         UniqueConstraint('server_meta_id', 'room_id'),
     )
 
@@ -128,5 +130,9 @@ class Message(Base):
     content_markdown = Column(String)
 
     __table_args__ = (
+        Index('ix_server_meta_id_message_id', server_meta_id, message_id),
+        Index('ix_parent_message_id_room_meta_id', parent_message_id, room_meta_id),
+        Index('ix_room_meta_idowner_meta_id_message_id', room_meta_id, owner_meta_id, message_id),
+        Index('ix_owner_meta_id_room_meta_id_message_id', owner_meta_id, room_meta_id, message_id),
         UniqueConstraint('server_meta_id', 'message_id'),
     )

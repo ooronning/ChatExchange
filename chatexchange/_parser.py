@@ -45,6 +45,7 @@ class _ParsedDOM:
             self._dom = dom
         else:
             assert isinstance(dom, str)
+            logger.debug("Parsing HTML to DOM...")
             html = str(dom)
     
             # lxml only allows characters that are valid in XML, but the web is dark and full of terrors.
@@ -80,7 +81,7 @@ class TranscriptPage(_ParsedDOM):
         self.room_id = int(room_name_link.get('href').split('/')[2])
         self.room_name = room_name_link.text
 
-        logger.debug("Parsing transcript for room %s %s.", self.room_id, self.room_name)
+        logger.debug("Interpreting transcript DOM for room %s %s.", self.room_id, self.room_name)
 
         self.first_day = None
         self.previous_day = None
