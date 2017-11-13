@@ -51,7 +51,9 @@ class _ParsedDOM:
             # lxml only allows characters that are valid in XML, but the web is dark and full of terrors.
             # see https://stackoverflow.com/a/25920392/1114
             # via https://github.com/django-haystack/pysolr/pull/88/files
-            sanitized_html = re.sub(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]', '�', html)
+            html = html[int(len(html) * 0.5):int(len(html) * 0.52)]
+            print(repr(html))
+            sanitized_html = re.sub(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]+', '�', html)
             self._dom = self._parser.parse(sanitized_html).getroot()
     
     __repr__ = _obj_dict.repr

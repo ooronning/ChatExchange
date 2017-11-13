@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import getpass
+import itertools
 import logging
 import os
 import random
@@ -26,7 +27,7 @@ class Filter(logging.Filter):
         record.relative = '+{0:.0f}'.format(delta)
         record.e = ''
         record.n = '\n'
-        record.levelled_name = '%s/%-6s' % (record.name, record.levelname)
+        record.levelled_name = '%s/%-5s' % (record.name, record.levelname)
 
         self.last = record.relativeCreated
         return True
@@ -37,29 +38,48 @@ async def main():
 
     logger.setLevel(logging.DEBUG)
     logging.getLogger().setLevel(logging.WARN)
-    logging.getLogger('sqlalchemy.engine').setLevel(logging.WARN)
+    logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
     logging.getLogger('chatexchange').setLevel(logging.DEBUG)
 
     for handler in logging.getLogger().handlers:
         handler.addFilter(Filter())
 
     with AsyncClient('sqlite:///./.ChatExchange.sqlite.so', auth=(email, password)) as chat:
-        sand_box, char_coal, py_thon, java_script = await asyncio.gather(
-            chat.se.room(1), chat.se.room(11540), chat.so.room(6), chat.so.room(17))
+        for room in await asyncio.gather(
+                chat.mse.room(89), chat.se.room(11540), chat.so.room(6)):
+            async for message in room.old_messages(from_date=datetime.date(2014, 1, 21)):
+                pass
 
-        logger.debug("char_coal == %r", char_coal)
-        logger.debug("py_thon == %r", py_thon)
-        logger.debug("java_script == %r", java_script)
-        logger.debug("sand_box == %r", sand_box)
+            await report_most_replied(chat, room.server, room)
 
-        async for message in py_thon.old_messages():
-           pass
-        async for message in char_coal.old_messages():
-           pass
-        async for message in sand_box.old_messages():
-           pass
-        async for message in java_script.old_messages():
-           pass 
+
+async def report_most_replied(chat, server, room):
+    with chat.sql_session() as sql:
+        most_replied_to_ids = [id for (id,) in itertools.islice(sql.execute('''
+                select
+                    message.parent_message_id as message_id
+                from
+                    Message message
+                    left join Room room on message.room_meta_id = room.meta_id
+                    left join Server server on message.server_meta_id = server.meta_id
+                    left join Message parent on message.parent_message_id = parent.message_id and message.server_meta_id = parent.server_meta_id
+                where
+                    server.meta_id = :server_meta_id
+                    and room.room_id = :room_id
+                group by
+                    message.parent_message_id
+                order by
+                    count(message.parent_message_id) desc
+        ''', {'server_meta_id': room.server_meta_id, 'room_id': room.room_id}), 4)]
+
+    print("Most replied-to messages in room #%s: %s:" % (room.room_id, room.name))
+    for message_id in most_replied_to_ids:
+        message = await server.message(message_id)
+        replies = await message.replies()
+        print("%s replies (%s)" % (len(replies), ", ".join("%s by %s" % (m.message_id, m.owner.name) for m in replies)))
+        print("https://chat.stackoverflow.com/transcript/messages/%s" % (message.message_id))
+
+
 
 
 if __name__ == '__main__':

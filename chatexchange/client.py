@@ -250,13 +250,22 @@ class Server(models.Server):
 class User(models.User):
     _client_server = None
 
+    @property
+    def server(self):
+        return self._client_server
+
 
 class Room(models.Room):
     _client_server = None
 
-    async def old_messages(self):
+    @property
+    def server(self):
+        return self._client_server
+
+    async def old_messages(self, from_date=None):
         transcript = await _scraper.TranscriptPage.scrape(
-            self._client_server, room_id=self.room_id)
+            self._client_server, room_id=self.room_id,
+            date=from_date)
 
         while True:
             for message in sorted(
@@ -286,8 +295,11 @@ class Message(models.Message):
 
     @property
     def owner(self):
-        if self.owner_id:
-            return self._client_server.user(self.owner_id)
+        if self.owner_meta_id:
+            with self._client_server._client.sql_session() as sql:
+                user = sql.query(User).filter(models.User.meta_id == self.owner_meta_id).one()
+                user._client_server = self._client_server
+                return user
         else:
             return None
 
@@ -295,3 +307,13 @@ class Message(models.Message):
     def room(self):
         return self._client_server.room(self.room_id)
 
+    async def replies(self):
+        logger.warning("Message.replies() only checks locally for now.")
+        with self._client_server._client.sql_session() as sql:
+            messages = list(
+                sql.query(Message)
+                    .filter(models.Message.parent_message_id == self.message_id)
+                    .order_by(models.Message.message_id))
+            for message in messages:
+                message._client_server = self._client_server
+            return messages
