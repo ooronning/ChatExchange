@@ -46,8 +46,10 @@ async def main():
 
     with AsyncClient('sqlite:///./.ChatExchange.sqlite.so', auth=(email, password)) as chat:
         for room in await asyncio.gather(
+                chat.so.room(1),
+                chat.se.room(1),
                 chat.mse.room(89), chat.se.room(11540), chat.so.room(6)):
-            async for message in room.old_messages(from_date=datetime.date(2014, 1, 21)):
+            async for message in room.old_messages():
                 pass
 
             await report_most_replied(chat, room.server, room)

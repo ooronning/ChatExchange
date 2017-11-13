@@ -38,8 +38,11 @@ def _dom_text_content(dom):
 # as a grotesque hack. Maybe see about fixing upstream.
 # XXX gross but apparently-neccessary hack to prevent &#1; from crashing everything.
 import html5lib._ihatexml
-html5lib._ihatexml.InfosetFilter.coerceCharacters = html5lib._ihatexml.InfosetFilter.toXmlName
-
+def coerceCharacters(self, s):
+    # see https://stackoverflow.com/a/25920392/1114
+    # via https://github.com/django-haystack/pysolr/pull/88/files
+    return re.sub(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]+', '�', s)
+html5lib._ihatexml.InfosetFilter.coerceCharacters = coerceCharacters
 
 
 class _ParsedDOM:
