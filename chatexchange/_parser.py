@@ -32,6 +32,16 @@ def _dom_text_content(dom):
     return lxml.html.tostring(dom, encoding=str, method='text')
 
 
+# lxml only allows characters that are valid in XML, but the web is dark and full of terrors.
+# it looks like html5lib tries to handle this with InfosetFilter, but coerceCharacters
+# doesn't filter out the right things. This may not be strictly correct but sort-of works
+# as a grotesque hack. Maybe see about fixing upstream.
+# XXX gross but apparently-neccessary hack to prevent &#1; from crashing everything.
+import html5lib._ihatexml
+html5lib._ihatexml.InfosetFilter.coerceCharacters = html5lib._ihatexml.InfosetFilter.toXmlName
+
+
+
 class _ParsedDOM:
     """
     Base class for a parsed document/document fragment.
@@ -48,13 +58,7 @@ class _ParsedDOM:
             logger.debug("Parsing HTML to DOM...")
             html = str(dom)
     
-            # lxml only allows characters that are valid in XML, but the web is dark and full of terrors.
-            # see https://stackoverflow.com/a/25920392/1114
-            # via https://github.com/django-haystack/pysolr/pull/88/files
-            html = html[int(len(html) * 0.5):int(len(html) * 0.51)]
-            print(repr(html))
-            sanitized_html = re.sub(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]+', '�', html)
-            self._dom = self._parser.parse(sanitized_html).getroot()
+            self._dom = self._parser.parse(html).getroot()
     
     __repr__ = _obj_dict.repr
         
