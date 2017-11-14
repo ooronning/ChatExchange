@@ -7,8 +7,8 @@ import logging
 import re
 from html import escape as escape_html
 
-from lxml.etree import ElementBase
 import lxml.html
+from lxml.etree import ElementBase
 from lxml.html import html5parser
 
 from . import _obj_dict
@@ -67,7 +67,7 @@ class _ParsedDOM:
         
 
 
-class TranscriptPage(_ParsedDOM):
+class TranscriptDay(_ParsedDOM):
     class Message:
         def __init__(self, **attrs):
             self.id = None
@@ -134,7 +134,7 @@ class TranscriptPage(_ParsedDOM):
                 user_id = None
 
             for message_el in monologue_el.cssselect('.message'):
-                message = TranscriptPage.Message()
+                message = TranscriptDay.Message()
 
                 message.owner_user_id = user_id
                 message.owner_user_name = user_name

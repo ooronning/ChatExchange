@@ -1,9 +1,7 @@
 import abc
 import logging
 
-from . import _parser, _obj_dict
-
-
+from . import _obj_dict, parser
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +39,12 @@ class _Scraper:
 
 
 
-class TranscriptPage(_Scraper):
-    def _make_path(self, room_id=None, message_id=None, date=None):
+class TranscriptDay(_Scraper):
+    def _make_path(
+            self,
+            room_id=None,
+            message_id=None,
+            date=None):
         target_room_id = room_id
         target_message_id = message_id
         target_date = date
@@ -65,11 +67,11 @@ class TranscriptPage(_Scraper):
                 path += '/%s/%s/%s' % (
                     target_date.year, target_date.month, target_date.day)
             path += '/0-24'
-        
+
         return path
 
     def _load(self):
-        self.data = _parser.TranscriptPage(self.html)
+        self.data = parser.TranscriptDay(self.html)
 
         logger.debug("Inserting data into database.")
 
@@ -112,5 +114,68 @@ class TranscriptPage(_Scraper):
                         owner = self.server._get_or_create_user(sql, -1)
                     self.users[m.owner_user_id] = owner
                 message.owner_meta_id = owner.meta_id
-        
+
         return self
+
+
+class UserInfo(_Scraper):
+    def _make_path(
+            self,
+            user_id,
+            rooms='current' or 'frequent'):
+        return '/users/%s?tab=general&rooms=%s' % (user_id, rooms)
+
+
+class UserRecent(_Scraper):
+    def _make_path(
+            self,
+            user_id,
+            page=1 or int()):
+        return '/users/%s?tab=recent&page=%s' % (user_id, page)
+
+
+class UserList(_Scraper):
+    def _make_path(
+            self,
+            tab='all' or 'online' or 'active',
+            sort='recent' or 'reputation' or 'activity',
+            filter='',
+            page=1):
+        return '/users?tab=%s&sort=%s&filter=%s&pageSize=100&page=%s' % (tab, sort, filter, page)
+
+
+class RoomInfo(_Scraper):
+    def _make_path(
+            self,
+            room_id,
+            users='current' or 'frequent'):
+        return '/rooms/info/%s?tab=general&users=%s' % (room_id, users)
+
+
+class RoomAccess(_Scraper):
+    def _make_path(
+            self,
+            room_id):
+        return '/rooms/info/%s?tab=access' % (room_id,)
+
+
+class RoomList(_Scraper):
+    def _make_path(
+            self,
+            tab='all' or 'favorite' or 'events' or 'mine',
+            sort='active' or 'event' or 'people' or 'created',
+            filter='',
+            page=1,
+            nohide=True):
+        return '/users?tab=%s&sort=%s&filter=%s&pageSize=100&page=%s&nohide=%s' % (tab, sort, filter, page, nohide)
+
+
+class MessageSearch(_Scraper):
+    def _make_path(
+            self,
+            query,
+            sort='newest' or 'relevance' or 'stars',
+            room_id='',
+            user_id='',
+            page=1):
+        return '/search?q=%s&Room=%s&User=%s&page=%s&pagesize=100&sort=%s' % (query, room_id, user_id, page, sort)

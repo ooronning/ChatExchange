@@ -188,8 +188,8 @@ Here's most of the API:
     - ._seed
         - .data() # yields a bunch of seed data that needs to be added to new databases
 
-    - ._parser # classes interpreting specific HTML pages as structured data
-        - .TranscriptPage
+    - .parser # classes interpreting specific HTML pages as structured data
+        - .TranscriptDay
 
     - ._obj_dict
         - .update(o, **attrs) # a generic __init__ asserting named attributes already exist 

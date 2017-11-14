@@ -31,7 +31,6 @@ class _SQLSession(sqlalchemy.orm.session.Session):
     pass
 
 
-
 class AsyncClient:
     # Defaults used to control caching:
     max_age_now     = -INFINITY
@@ -200,7 +199,7 @@ class Server(models.Server):
             return room
 
         if not self._client.offline:
-            transcript = await _scraper.TranscriptPage.scrape(self, room_id=room_id)
+            transcript = await _scraper.TranscriptDay.scrape(self, room_id=room_id)
             room = transcript.room
 
         if room.meta_update_age <= self._client.required_max_age:
@@ -232,7 +231,7 @@ class Server(models.Server):
             return message
 
         if not self._client.offline:
-            transcript = await _scraper.TranscriptPage.scrape(self, message_id=message_id)
+            transcript = await _scraper.TranscriptDay.scrape(self, message_id=message_id)
 
             message = transcript.messages[message_id]
 
@@ -263,7 +262,7 @@ class Room(models.Room):
         return self._client_server
 
     async def old_messages(self, from_date=None):
-        transcript = await _scraper.TranscriptPage.scrape(
+        transcript = await _scraper.TranscriptDay.scrape(
             self._client_server, room_id=self.room_id,
             date=from_date)
 
@@ -276,7 +275,7 @@ class Room(models.Room):
             previous_day = transcript.data.previous_day or transcript.data.first_day
             if previous_day:
                 await asyncio.sleep(0.25) # TODO better rate limiting
-                transcript = await _scraper.TranscriptPage.scrape(
+                transcript = await _scraper.TranscriptDay.scrape(
                     self._client_server, room_id=self.room_id, date=previous_day)
             else:
                 break
