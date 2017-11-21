@@ -1,3 +1,3 @@
 class SyncClient:
-    def __init__(self):
+    def __new__(cls):
         raise NotImplementedError()

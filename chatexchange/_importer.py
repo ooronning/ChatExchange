@@ -1,15 +1,15 @@
 import abc
 import logging
 
-from . import _obj_dict, parser
+from . import _obj_dict, scraper
 
 logger = logging.getLogger(__name__)
 
 
-class _Scraper:
+class _Importer:
     __repr__ = _obj_dict.repr
     @classmethod
-    async def scrape(cls, server, **kwargs):
+    async def fetch(cls, server, **kwargs):
         self = cls(server, **kwargs)
         logger.info("Fetching %s...", self.url)
         self.html = await self._fetch()
@@ -39,7 +39,7 @@ class _Scraper:
 
 
 
-class TranscriptDay(_Scraper):
+class TranscriptDay(_Importer):
     def _make_path(
             self,
             room_id=None,
@@ -71,7 +71,7 @@ class TranscriptDay(_Scraper):
         return path
 
     def _load(self):
-        self.data = parser.TranscriptDay(self.html)
+        self.data = scraper.TranscriptDay(self.html)
 
         logger.debug("Inserting data into database.")
 
@@ -118,7 +118,7 @@ class TranscriptDay(_Scraper):
         return self
 
 
-class UserInfo(_Scraper):
+class UserInfo(_Importer):
     def _make_path(
             self,
             user_id,
@@ -126,7 +126,7 @@ class UserInfo(_Scraper):
         return '/users/%s?tab=general&rooms=%s' % (user_id, rooms)
 
 
-class UserRecent(_Scraper):
+class UserRecent(_Importer):
     def _make_path(
             self,
             user_id,
@@ -134,7 +134,7 @@ class UserRecent(_Scraper):
         return '/users/%s?tab=recent&page=%s' % (user_id, page)
 
 
-class UserList(_Scraper):
+class UserList(_Importer):
     def _make_path(
             self,
             tab='all' or 'online' or 'active',
@@ -144,7 +144,7 @@ class UserList(_Scraper):
         return '/users?tab=%s&sort=%s&filter=%s&pageSize=100&page=%s' % (tab, sort, filter, page)
 
 
-class RoomInfo(_Scraper):
+class RoomInfo(_Importer):
     def _make_path(
             self,
             room_id,
@@ -152,14 +152,14 @@ class RoomInfo(_Scraper):
         return '/rooms/info/%s?tab=general&users=%s' % (room_id, users)
 
 
-class RoomAccess(_Scraper):
+class RoomAccess(_Importer):
     def _make_path(
             self,
             room_id):
         return '/rooms/info/%s?tab=access' % (room_id,)
 
 
-class RoomList(_Scraper):
+class RoomList(_Importer):
     def _make_path(
             self,
             tab='all' or 'favorite' or 'events' or 'mine',
@@ -170,7 +170,7 @@ class RoomList(_Scraper):
         return '/users?tab=%s&sort=%s&filter=%s&pageSize=100&page=%s&nohide=%s' % (tab, sort, filter, page, nohide)
 
 
-class MessageSearch(_Scraper):
+class MessageSearch(_Importer):
     def _make_path(
             self,
             query,

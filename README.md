@@ -188,7 +188,7 @@ Here's most of the API:
     - ._seed
         - .data() # yields a bunch of seed data that needs to be added to new databases
 
-    - .parser # classes interpreting specific HTML pages as structured data
+    - .scraper # classes interpreting specific HTML pages as structured data
         - .TranscriptDay
 
     - ._obj_dict

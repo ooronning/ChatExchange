@@ -45,7 +45,7 @@ def coerceCharacters(self, s):
 html5lib._ihatexml.InfosetFilter.coerceCharacters = coerceCharacters
 
 
-class _ParsedDOM:
+class _ScrapedDOM:
     """
     Base class for a parsed document/document fragment.
     """
@@ -67,7 +67,7 @@ class _ParsedDOM:
         
 
 
-class TranscriptDay(_ParsedDOM):
+class TranscriptDay(_ScrapedDOM):
     class Message:
         def __init__(self, **attrs):
             self.id = None

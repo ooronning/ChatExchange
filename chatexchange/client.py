@@ -7,7 +7,7 @@ import random
 import aiohttp
 import sqlalchemy.orm
 
-from . import models, _scraper, _seed
+from . import models, _importer, _seed, _async
 from ._constants import *
 
 
@@ -57,6 +57,8 @@ class AsyncClient:
 
         if db_path.startswith('sqlite:'):
             self._prepare_sqlite_hacks()
+        
+        self._request_throttle = _async.Throttle(interval=0.5)
 
         models.Base.metadata.create_all(self.sql_engine)
 
@@ -157,7 +159,7 @@ class Server(models.Server):
             sql.add(user)
             sql.flush()
             assert user.meta_id
-        user._client_server = self
+        user._server = self
         return user
         
     def user(self, user_id):
@@ -188,7 +190,7 @@ class Server(models.Server):
             sql.add(room)
             sql.flush()
             assert room.meta_id
-        room._client_server = self
+        room._server = self
         return room
 
     async def room(self, room_id):
@@ -199,7 +201,8 @@ class Server(models.Server):
             return room
 
         if not self._client.offline:
-            transcript = await _scraper.TranscriptDay.scrape(self, room_id=room_id)
+            await self._client._request_throttle.turn()
+            transcript = await _importer.TranscriptDay.fetch(self, room_id=room_id)
             room = transcript.room
 
         if room.meta_update_age <= self._client.required_max_age:
@@ -220,7 +223,7 @@ class Server(models.Server):
             sql.add(message)
             sql.flush()
             assert message.meta_id
-        message._client_server = self
+        message._server = self
         return message
 
     async def message(self, message_id):
@@ -231,7 +234,8 @@ class Server(models.Server):
             return message
 
         if not self._client.offline:
-            transcript = await _scraper.TranscriptDay.scrape(self, message_id=message_id)
+            await self._server._client._request_throttle.turn()
+            transcript = await _importer.TranscriptDay.fetch(self, message_id=message_id)
 
             message = transcript.messages[message_id]
 
@@ -247,23 +251,24 @@ class Server(models.Server):
 
 
 class User(models.User):
-    _client_server = None
+    _server = None
 
     @property
     def server(self):
-        return self._client_server
+        return self._server
 
 
 class Room(models.Room):
-    _client_server = None
+    _server = None
 
     @property
     def server(self):
-        return self._client_server
+        return self._server
 
     async def old_messages(self, from_date=None):
-        transcript = await _scraper.TranscriptDay.scrape(
-            self._client_server, room_id=self.room_id,
+        await self._server._client._request_throttle.turn()
+        transcript = await _importer.TranscriptDay.fetch(
+            self._server, room_id=self.room_id,
             date=from_date)
 
         while True:
@@ -274,9 +279,9 @@ class Room(models.Room):
 
             previous_day = transcript.data.previous_day or transcript.data.first_day
             if previous_day:
-                await asyncio.sleep(0.25) # TODO better rate limiting
-                transcript = await _scraper.TranscriptDay.scrape(
-                    self._client_server, room_id=self.room_id, date=previous_day)
+                await self._server._client._request_throttle.turn()
+                transcript = await _importer.TranscriptDay.fetch(
+                    self._server, room_id=self.room_id, date=previous_day)
             else:
                 break
 
@@ -286,33 +291,33 @@ class Room(models.Room):
 
 
 class Message(models.Message):
-    _client_server = None
+    _server = None
 
     @property
     def server(self):
-        return self._client_server
+        return self._server
 
     @property
     def owner(self):
         if self.owner_meta_id:
-            with self._client_server._client.sql_session() as sql:
+            with self._server._client.sql_session() as sql:
                 user = sql.query(User).filter(models.User.meta_id == self.owner_meta_id).one()
-                user._client_server = self._client_server
+                user._server = self._server
                 return user
         else:
             return None
 
     @property
     def room(self):
-        return self._client_server.room(self.room_id)
+        return self._server.room(self.room_id)
 
     async def replies(self):
         logger.warning("Message.replies() only checks locally for now.")
-        with self._client_server._client.sql_session() as sql:
+        with self._server._client.sql_session() as sql:
             messages = list(
                 sql.query(Message)
                     .filter(models.Message.parent_message_id == self.message_id)
                     .order_by(models.Message.message_id))
             for message in messages:
-                message._client_server = self._client_server
+                message._server = self._server
             return messages
