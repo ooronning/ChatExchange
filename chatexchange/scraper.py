@@ -41,14 +41,14 @@ def _dom_text_content(dom):
 # XXX gross but apparently-neccessary hack to prevent &#1; from crashing everything.
 import html5lib._ihatexml
 _xml_illegal_re = re.compile(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]')
-def coerceCharacters(self, s):
+def _coerce_characters(self, s):
     # see https://stackoverflow.com/a/25920392/1114
     # via https://github.com/django-haystack/pysolr/pull/88/files
     sp = _xml_illegal_re.sub('�', s)
     if s != sp:
         warnings.warn(html5lib._ihatexml.DataLossWarning("non-XML-legal character(s) mangled"))
     return sp
-html5lib._ihatexml.InfosetFilter.coerceCharacters = coerceCharacters
+html5lib._ihatexml.InfosetFilter.coerceCharacters = _coerce_characters
 
 
 class _Scraped:
