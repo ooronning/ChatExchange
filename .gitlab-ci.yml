@@ -1,6 +1,7 @@
+image: python:3
+
 test:
-  image: python:3
   script:
   - pip install pipenv
-  - pipenv install .
+  - pipenv install
   - pipenv run pytest

@@ -1,5 +1,3 @@
-"""
-Dummy intermediate package for users consuming this as a Git submodule instead
-of a packged Python package.
-"""
+"""Dummy intermediate package for non-installed use of ChatExchange."""
+from . import chatexchange
 from .chatexchange import *
