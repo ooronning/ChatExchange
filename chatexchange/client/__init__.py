@@ -7,8 +7,9 @@ import random
 import aiohttp
 import sqlalchemy.orm
 
-from . import models, _importer, _seed, _async
-from ._constants import *
+from ..data import models, _seed
+from ..util import _async
+from . import request
 
 
 
@@ -31,13 +32,13 @@ class _SQLSession(sqlalchemy.orm.session.Session):
     pass
 
 
-class AsyncClient:
+class Client:
     # Defaults used to control caching:
-    max_age_now     = -INFINITY
+    max_age_now     = float('-inf')
     max_age_current = 60                # one minute until a datum is no longer "current"
     max_age_fresh   = 60 * 60 * 4       # four hours until a datum is no longer "fresh"
     max_age_alive   = 60 * 60 * 24 * 64 # two months until a datum is no longer "alive"
-    max_age_dead    = +INFINITY
+    max_age_dead    = float('inf')
 
     # These should be function options but we'll just set them here for now:
     desired_max_age = max_age_fresh
@@ -202,7 +203,7 @@ class Server(models.Server):
 
         if not self._client.offline:
             await self._client._request_throttle.turn()
-            transcript = await _importer.TranscriptDay.fetch(self, room_id=room_id)
+            transcript = await request.TranscriptDay.fetch(self, room_id=room_id)
             room = transcript.room
 
         if room.meta_update_age <= self._client.required_max_age:
@@ -235,7 +236,7 @@ class Server(models.Server):
 
         if not self._client.offline:
             await self._server._client._request_throttle.turn()
-            transcript = await _importer.TranscriptDay.fetch(self, message_id=message_id)
+            transcript = await request.TranscriptDay.fetch(self, message_id=message_id)
 
             message = transcript.messages[message_id]
 
@@ -267,7 +268,7 @@ class Room(models.Room):
 
     async def old_messages(self, from_date=None):
         await self._server._client._request_throttle.turn()
-        transcript = await _importer.TranscriptDay.fetch(
+        transcript = await request.TranscriptDay.fetch(
             self._server, room_id=self.room_id,
             date=from_date)
 
@@ -280,7 +281,7 @@ class Room(models.Room):
             previous_day = transcript.data.previous_day or transcript.data.first_day
             if previous_day:
                 await self._server._client._request_throttle.turn()
-                transcript = await _importer.TranscriptDay.fetch(
+                transcript = await request.TranscriptDay.fetch(
                     self._server, room_id=self.room_id, date=previous_day)
             else:
                 break

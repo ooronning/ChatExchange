@@ -1,21 +1,13 @@
 import asyncio
-import datetime
-import getpass
 import itertools
 import logging
 import os
-import random
-import time
 
-import chatexchange
-from chatexchange.client import AsyncClient
+from chatexchange.client import Client
 
 
 
 logger = logging.getLogger(__name__)
-
-email = os.environ['ChatExchangeU']
-password = os.environ['ChatExchangeP']
 
 
 class Filter(logging.Filter):
@@ -34,6 +26,9 @@ class Filter(logging.Filter):
 
 
 async def main():
+    email = os.environ['ChatExchangeU']
+    password = os.environ['ChatExchangeP']
+
     logging.basicConfig(format="%(e)32s %(relative)6s ms%(n)s%(levelled_name)32s %(message)s", level=logging.DEBUG)
 
     logger.setLevel(logging.DEBUG)
@@ -44,9 +39,20 @@ async def main():
     for handler in logging.getLogger().handlers:
         handler.addFilter(Filter())
 
-    with AsyncClient('sqlite:///./.ChatExchange.sqlite.so', auth=(email, password)) as chat:
-        for room in await asyncio.gather(
-                chat.mse.room(89), chat.se.room(11540), chat.so.room(6)):
+    with Client('sqlite:///./.ChatExchange.sqlite.so', auth=(email, password)) as chat:
+        devs = [
+            chat.mse.user(134300),
+            chat.se.user(1251),
+            chat.so.user(1114)
+        ]
+
+        rooms = [
+            chat.mse.room(89),
+            chat.se.room(11540),
+            chat.so.room(6)
+        ]
+
+        for room in await asyncio.gather(*rooms):
             async for message in room.old_messages():
                 pass
 
@@ -77,10 +83,4 @@ async def report_most_replied(chat, server, room):
         message = await server.message(message_id)
         replies = await message.replies()
         print("%s replies (%s)" % (len(replies), ", ".join("%s by %s" % (m.message_id, m.owner.name) for m in replies)))
-        print("https://chat.stackoverflow.com/transcript/messages/%s" % (message.message_id))
-
-
-
-
-if __name__ == '__main__':
-    asyncio.get_event_loop().run_until_complete(main())
+        print("https://%s/transcript/message/%s" % (server.host, message.message_id))
