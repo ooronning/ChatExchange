@@ -1,7 +1,10 @@
 import abc
 import logging
 
-from . import _obj_dict, scraper
+from ... import parse
+from ...util import _obj_dict
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +74,7 @@ class TranscriptDay(_Request):
         return path
 
     def _load(self):
-        self.data = scraper.TranscriptDay(self.html)
+        self.data = parse.TranscriptDay(self.html)
 
         logger.debug("Inserting data into database.")
 

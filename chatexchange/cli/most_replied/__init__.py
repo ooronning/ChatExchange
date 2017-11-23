@@ -10,34 +10,9 @@ from chatexchange.client import Client
 logger = logging.getLogger(__name__)
 
 
-class Filter(logging.Filter):
-    last = 0
-
-    def filter(self, record):
-        # see https://stackoverflow.com/a/43052949/1114
-        delta = record.relativeCreated - self.last
-        record.relative = '+{0:.0f}'.format(delta)
-        record.e = ''
-        record.n = '\n'
-        record.levelled_name = '%s/%-5s' % (record.name, record.levelname)
-
-        self.last = record.relativeCreated
-        return True
-
-
 async def main():
     email = os.environ['ChatExchangeU']
     password = os.environ['ChatExchangeP']
-
-    logging.basicConfig(format="%(e)32s %(relative)6s ms%(n)s%(levelled_name)32s %(message)s", level=logging.DEBUG)
-
-    logger.setLevel(logging.DEBUG)
-    logging.getLogger().setLevel(logging.WARN)
-    logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
-    logging.getLogger('chatexchange').setLevel(logging.DEBUG)
-
-    for handler in logging.getLogger().handlers:
-        handler.addFilter(Filter())
 
     with Client('sqlite:///./.ChatExchange.sqlite.so', auth=(email, password)) as chat:
         devs = [
